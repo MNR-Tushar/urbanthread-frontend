@@ -32,7 +32,7 @@ export const Navbar = () => {
     const refreshCartCount = () => {
       if (!isAuthenticated) { setCartCount(0); return; }
       cartAPI.getCart().then(({ data }) => {
-        if (active) setCartCount((data.items || []).reduce((total, item) => total + Number(item.quantity || 0), 0));
+        if (active) setCartCount(new Set((data.items || []).map((item) => item.product?.id).filter(Boolean)).size);
       }).catch(() => { if (active) setCartCount(0); });
     };
     refreshCartCount();
