@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { reviewsAPI, productsAPI } from '../api';
 import { useAuth } from '../contexts/useAuth';
+import { Paginated } from '../components/Paginated';
 
 export const ReviewsPage = () => {
   const { productId } = useParams();
@@ -116,14 +117,14 @@ export const ReviewsPage = () => {
       {error && !isAuthenticated && <div className="error">{error}</div>}{notice && <div className="success" role="status">{notice}</div>}
       <div className="review-list">
         <h2>Customer Reviews</h2>
-        {reviews.map((r) => (
+        <Paginated items={reviews} pageSize={8} label="reviews">{(pageReviews) => pageReviews.map((r) => (
           <div key={r.id} className="review-card">
             <p><strong>{r.user?.username}</strong><span className="review-stars" aria-label={`${r.rating} out of 5 stars`}>{'★'.repeat(Number(r.rating))}{'☆'.repeat(5 - Number(r.rating))}</span></p>
             <p>{r.review_text}</p>
             <small style={{ color: '#64748b' }}>{new Date(r.created_at).toLocaleDateString()}</small>
             {(user?.is_staff || user?.is_superuser || r.user?.id === user?.id) && <div className="admin-row-actions"><button type="button" onClick={() => editReview(r)}>Edit</button><button type="button" className="danger" onClick={() => deleteReview(r)}>Delete</button></div>}
           </div>
-        ))}
+        ))}</Paginated>
       </div>
     </div>
   );

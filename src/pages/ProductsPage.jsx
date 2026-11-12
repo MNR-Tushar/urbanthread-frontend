@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { productsAPI } from '../api';
+import { getAllPages, productsAPI } from '../api';
 import { Loading } from '../components/common';
 import { useAuth } from '../contexts/useAuth';
+import { Paginated } from '../components/Paginated';
 
 const asList = (data) => Array.isArray(data) ? data : data?.results || [];
 const priceOf = (product) => Number(product.discount_price) > 0 ? Number(product.discount_price) : Number(product.price || 0);
@@ -29,12 +30,12 @@ export const ProductsPage = () => {
 
   useEffect(() => {
     let active = true;
-    Promise.all([productsAPI.getProducts(), productsAPI.getCategories(), productsAPI.getBrands(), productsAPI.getBanners()])
-      .then(([productResponse, categoryResponse, brandResponse, bannerResponse]) => {
+    Promise.all([getAllPages(productsAPI.getProducts), getAllPages(productsAPI.getCategories), getAllPages(productsAPI.getBrands), productsAPI.getBanners()])
+      .then(([productRows, categoryRows, brandRows, bannerResponse]) => {
         if (!active) return;
-        setProducts(asList(productResponse.data));
-        setCategories(asList(categoryResponse.data));
-        setBrands(asList(brandResponse.data));
+        setProducts(productRows);
+        setCategories(categoryRows);
+        setBrands(brandRows);
         setBanners(asList(bannerResponse.data));
       })
       .catch(() => { if (active) setError('We could not load the collection. Please refresh and try again.'); })
@@ -122,21 +123,17 @@ export const ProductsPage = () => {
         </div>
 
         {error && <div className="error" role="alert">{error}</div>}
-        {categories.length > 0 && <div className="category-rail" aria-label="Shop by category">
-          <button className={`category-pill ${!selectedCategory ? 'active' : ''}`} onClick={() => setSelectedCategory('')}>Everything <span>{products.length}</span></button>
-          {categories.map((category) => <button key={category.id} className={`category-pill ${selectedCategory === String(category.id) ? 'active' : ''}`} onClick={() => setSelectedCategory(String(category.id))}>{category.category_name}</button>)}
-        </div>}
-
         <div className="catalog-toolbar">
           <p>{searchQuery ? <>Results for <strong>“{searchQuery}”</strong></> : 'Good clothes. No guesswork.'}</p>
           <div className="catalog-controls">
+            <label className="catalog-select-label">Category <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}><option value="">All categories</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.category_name}</option>)}</select></label>
             <label className="catalog-select-label">Brand <select value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)}><option value="">All brands</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.brand_name}</option>)}</select></label>
             <label className="catalog-select-label">Sort <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}><option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="name">Name: A–Z</option></select></label>
           </div>
         </div>
 
-        <div className="product-grid">
-          {filteredProducts.length === 0 ? <div className="catalog-empty"><span>⌕</span><h3>No pieces found</h3><p>Try a different search or clear your filters.</p><button className="text-button" onClick={() => { setSearchParams({}); setSelectedCategory(''); setSelectedBrand(''); }}>Clear filters</button></div> : filteredProducts.map((product, index) => {
+        <Paginated items={filteredProducts} pageSize={12} label="products">{(pageProducts) => <div className="product-grid">
+          {filteredProducts.length === 0 ? <div className="catalog-empty"><span>⌕</span><h3>No pieces found</h3><p>Try a different search or clear your filters.</p><button className="text-button" onClick={() => { setSearchParams({}); setSelectedCategory(''); setSelectedBrand(''); }}>Clear filters</button></div> : pageProducts.map((product, index) => {
             const image = product.images?.[0]?.image;
             const discounted = Number(product.discount_price) > 0;
             return <article key={product.id} className="product-card">
@@ -153,7 +150,7 @@ export const ProductsPage = () => {
               </div>
             </article>;
           })}
-        </div>
+        </div>}</Paginated>
       </section>
 
       {isHome && <section className="store-promise"><div><span>01</span><strong>Comfort, always</strong><p>Easy-to-wear fits for every day.</p></div><div><span>02</span><strong>Made to last</strong><p>Thoughtful details. Better basics.</p></div><div><span>03</span><strong>Simple delivery</strong><p>Reliable delivery, right to your door.</p></div></section>}

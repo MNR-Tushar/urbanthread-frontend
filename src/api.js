@@ -154,4 +154,19 @@ export const reviewsAPI = {
   deleteReview: (id) => api.delete(`/reviews/${id}/`),
 };
 
+export const getAllPages = async (request) => {
+  const rows = [];
+  let offset = 0;
+  let hasNext = true;
+  while (hasNext) {
+    const { data } = await request({ limit: 100, offset });
+    if (Array.isArray(data)) return data;
+    const pageRows = data?.results || [];
+    rows.push(...pageRows);
+    hasNext = Boolean(data?.next && pageRows.length);
+    offset += pageRows.length;
+  }
+  return rows;
+};
+
 export default api;

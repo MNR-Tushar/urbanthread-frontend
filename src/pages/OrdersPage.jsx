@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { ordersAPI } from '../api';
 import { useAuth } from '../contexts/useAuth';
 import { Loading } from '../components/common';
+import { Paginated } from '../components/Paginated';
 
 export const OrdersPage = () => {
   const location = useLocation();
@@ -67,8 +68,8 @@ export const OrdersPage = () => {
           {orders.length === 0 ? (
             <div className="empty-orders">No orders found</div>
           ) : (
-            <div className="orders-list">
-              {orders.map((order) => (
+            <Paginated items={orders} pageSize={8} label="orders">{(pageOrders) => <div className="orders-list">
+              {pageOrders.map((order) => (
                 <div key={order.id} className="order-card">
                   <div className="order-header">
                     <h3>Order #{order.order_number}</h3>
@@ -90,7 +91,7 @@ export const OrdersPage = () => {
                   )}
                 </div>
               ))}
-            </div>
+            </div>}</Paginated>
           )}
         </>
       )}

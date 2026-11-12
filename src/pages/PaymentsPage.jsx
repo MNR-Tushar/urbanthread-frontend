@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { paymentsAPI } from '../api';
 import { useAuth } from '../contexts/useAuth';
+import { Paginated } from '../components/Paginated';
 
 export const PaymentsPage = () => {
   const location = useLocation();
@@ -120,7 +121,7 @@ export const PaymentsPage = () => {
           </form>
           <section className="payment-history">
             <h2>Payment history</h2>
-            {payments.length ? payments.map((payment) => <article className="payment-history-item" key={payment.id}>
+            {payments.length ? <Paginated items={payments} pageSize={8} label="payments">{(pagePayments) => pagePayments.map((payment) => <article className="payment-history-item" key={payment.id}>
               <div><strong>{payment.order?.order_number || payment.transaction_id}</strong><p>{payment.payment_method_display || payment.payment_method}</p></div>
               <div><strong>৳{payment.amount}</strong><span className={`status ${payment.status}`}>{payment.status_display || payment.status}</span></div>
               <div className="payment-actions">
@@ -129,7 +130,7 @@ export const PaymentsPage = () => {
                 {isAdmin && payment.status === 'completed' && <button type="button" className="payment-logs-toggle danger" onClick={() => { setRefundTarget(payment); setRefundForm({ refund_amount: payment.amount, refund_reason: '' }); }}>Refund</button>}
               </div>
               {expandedPayment === payment.id && <div className="payment-log-list">{paymentLogs[payment.id]?.length ? paymentLogs[payment.id].map((log) => <p key={log.id}><strong>{log.event_type?.replaceAll('_', ' ') || 'Payment update'}</strong><span>{new Date(log.created_at).toLocaleString()}</span></p>) : <small>No payment activity recorded.</small>}</div>}
-            </article>) : <p>No payments yet. <Link to="/cart">Place an order</Link> to get started.</p>}
+            </article>)}</Paginated> : <p>No payments yet. <Link to="/cart">Place an order</Link> to get started.</p>}
           </section>
           {refundTarget && <div className="refund-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setRefundTarget(null); }}><form className="refund-dialog" onSubmit={submitRefund} role="dialog" aria-modal="true" aria-labelledby="refund-title"><button type="button" className="refund-close" aria-label="Close" onClick={() => setRefundTarget(null)}>×</button><span className="admin-step">PAYMENT · {refundTarget.transaction_id}</span><h2 id="refund-title">Request a refund</h2><p>This request is sent to the payment provider for processing.</p><label>Refund amount (BDT)<input type="number" min="0.01" max={refundTarget.amount} step="0.01" required value={refundForm.refund_amount} onChange={(e) => setRefundForm({ ...refundForm, refund_amount: e.target.value })} /></label><label>Reason<textarea required maxLength="500" rows="3" value={refundForm.refund_reason} onChange={(e) => setRefundForm({ ...refundForm, refund_reason: e.target.value })} /></label><button className="btn-submit" disabled={refundBusy}>{refundBusy ? 'Sending…' : 'Submit refund request'}</button></form></div>}
         </>

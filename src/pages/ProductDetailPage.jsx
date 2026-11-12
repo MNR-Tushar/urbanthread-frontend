@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { cartAPI, inventoryAPI, productsAPI, reviewsAPI } from '../api';
 import { useAuth } from '../contexts/useAuth';
 import { Loading } from '../components/common';
+import { Paginated } from '../components/Paginated';
 
 export const ProductDetailPage = () => {
   const { slug } = useParams();
@@ -223,11 +224,11 @@ export const ProductDetailPage = () => {
             <p>{displayedPendingReview.review_text}</p>
             <time>{Number(displayedPendingReview.rating)}/5</time>
           </article>}
-          {approvedReviews.length ? approvedReviews.map((review) => <article className="product-review-card" key={review.id}>
+          {approvedReviews.length ? <Paginated items={approvedReviews} pageSize={5} label="product reviews">{(pageReviews) => pageReviews.map((review) => <article className="product-review-card" key={review.id}>
             <div><strong>{review.user?.username || 'Customer'}</strong><span className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{'★'.repeat(Number(review.rating))}{'☆'.repeat(5 - Number(review.rating))}</span></div>
             <p>{review.review_text}</p>
             {review.created_at && <time dateTime={review.created_at}>{new Date(review.created_at).toLocaleDateString()}</time>}
-          </article>) : !displayedPendingReview && <p className="product-review-empty">No reviews yet. Be the first to share your experience.</p>}
+          </article>)}</Paginated> : !displayedPendingReview && <p className="product-review-empty">No reviews yet. Be the first to share your experience.</p>}
         </div>
       </section>
     </main>

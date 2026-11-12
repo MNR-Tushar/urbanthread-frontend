@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Paginated } from '../components/Paginated';
 import { couponsAPI } from '../api';
 import { useAuth } from '../contexts/useAuth';
 
@@ -106,7 +107,7 @@ export const CouponsPage = () => {
       </div>
       <div className="coupon-list">
         <h2>Available Coupons</h2>
-        {coupons.length === 0 ? <p className="empty-coupons">No active coupons are available right now.</p> : coupons.map((c) => (
+        {coupons.length === 0 ? <p className="empty-coupons">No active coupons are available right now.</p> : <Paginated items={coupons} pageSize={8} label="coupons">{(pageCoupons) => pageCoupons.map((c) => (
           <div key={c.id} className="coupon-card">
             <h3>{c.code}</h3>
             <p>Discount: {c.discount}%</p>
@@ -115,7 +116,7 @@ export const CouponsPage = () => {
             <p>Expires: {c.expiration_date}</p>
             {isAdmin && <div className="admin-row-actions coupon-card-actions"><button type="button" onClick={() => editCoupon(c)}>Edit</button><button type="button" className="danger" onClick={() => deleteCoupon(c)}>Delete</button></div>}
           </div>
-        ))}
+        ))}</Paginated>}
       </div>
     </div>
   );

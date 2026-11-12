@@ -1,7 +1,8 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { API_BASE_URL, inventoryAPI, productsAPI } from '../api';
+import { API_BASE_URL, getAllPages, inventoryAPI, productsAPI } from '../api';
 import { Loading } from '../components/common';
+import { Paginated } from '../components/Paginated';
 
 const listData = (data) => Array.isArray(data) ? data : data?.results || [];
 const emptyProduct = { product_name: '', sku: '', description: '', price: '', discount_price: '', category_id: '', brand_id: '', is_available: true };
@@ -34,13 +35,13 @@ export const InventoryPage = () => {
   const [stockFilters, setStockFilters] = useState({ category: '', brand: '', sort: 'product-asc' });
 
   const loadData = useCallback(async () => {
-    const [inventoryResponse, productResponse, categoryResponse, brandResponse, colorResponse, sizeResponse, bannerResponse] = await Promise.all([
-      inventoryAPI.getInventory(), productsAPI.getProducts(), productsAPI.getCategories(), productsAPI.getBrands(), productsAPI.getColors(), productsAPI.getSizes(), productsAPI.getBanners(),
+    const [inventoryRows, productRows, categoryRows, brandRows, colorResponse, sizeResponse, bannerResponse] = await Promise.all([
+      getAllPages(inventoryAPI.getInventory), getAllPages(productsAPI.getProducts), getAllPages(productsAPI.getCategories), getAllPages(productsAPI.getBrands), productsAPI.getColors(), productsAPI.getSizes(), productsAPI.getBanners(),
     ]);
-    setInventory(listData(inventoryResponse.data));
-    setProducts(listData(productResponse.data));
-    setCategories(listData(categoryResponse.data));
-    setBrands(listData(brandResponse.data));
+    setInventory(inventoryRows);
+    setProducts(productRows);
+    setCategories(categoryRows);
+    setBrands(brandRows);
     setColors(listData(colorResponse.data));
     setSizes(listData(sizeResponse.data));
     setBanners(listData(bannerResponse.data));
@@ -198,7 +199,7 @@ export const InventoryPage = () => {
             <label>Sort by<select value={stockFilters.sort} onChange={(e) => setStockFilters({ ...stockFilters, sort: e.target.value })}><option value="product-asc">Product name (A-Z)</option><option value="product-desc">Product name (Z-A)</option><option value="quantity-asc">Quantity (low to high)</option><option value="quantity-desc">Quantity (high to low)</option></select></label>
             {(stockFilters.category || stockFilters.brand) && <button className="admin-quiet-button" type="button" onClick={() => setStockFilters((current) => ({ ...current, category: '', brand: '' }))}>Clear filters</button>}
           </div>
-          {visibleInventory.length ? <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Product</th><th>Category</th><th>Brand</th><th>Color</th><th>Size</th><th>Quantity</th><th>Status</th><th>Actions</th></tr></thead><tbody>{visibleInventory.map((item) => <tr key={item.id}><td><strong>{item.product?.product_name}</strong></td><td>{item.product?.category?.category_name || '-'}</td><td>{item.product?.brand?.brand_name || '-'}</td><td>{item.color?.color}</td><td>{item.size?.size_type}</td><td>{item.quantity}</td><td><span className={`stock ${item.quantity > 5 ? 'in-stock' : item.quantity > 0 ? 'low-stock' : 'out-of-stock'}`}>{item.quantity > 5 ? 'In stock' : item.quantity > 0 ? 'Low stock' : 'Out of stock'}</span></td><td><div className="admin-row-actions"><button type="button" onClick={() => editStock(item)}>Edit</button><button type="button" className="danger" onClick={() => deleteStock(item)}>Remove</button></div></td></tr>)}</tbody></table></div> : <div className="empty-cart">{inventory.length ? 'No stock options match these filters.' : 'No inventory options yet. Add your first one above.'}</div>}
+          {visibleInventory.length ? <Paginated items={visibleInventory} pageSize={15} label="stock options">{(pageInventory) => <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Product</th><th>Category</th><th>Brand</th><th>Color</th><th>Size</th><th>Quantity</th><th>Status</th><th>Actions</th></tr></thead><tbody>{pageInventory.map((item) => <tr key={item.id}><td><strong>{item.product?.product_name}</strong></td><td>{item.product?.category?.category_name || '-'}</td><td>{item.product?.brand?.brand_name || '-'}</td><td>{item.color?.color}</td><td>{item.size?.size_type}</td><td>{item.quantity}</td><td><span className={`stock ${item.quantity > 5 ? 'in-stock' : item.quantity > 0 ? 'low-stock' : 'out-of-stock'}`}>{item.quantity > 5 ? 'In stock' : item.quantity > 0 ? 'Low stock' : 'Out of stock'}</span></td><td><div className="admin-row-actions"><button type="button" onClick={() => editStock(item)}>Edit</button><button type="button" className="danger" onClick={() => deleteStock(item)}>Remove</button></div></td></tr>)}</tbody></table></div>}</Paginated> : <div className="empty-cart">{inventory.length ? 'No stock options match these filters.' : 'No inventory options yet. Add your first one above.'}</div>}
         </section>
       </div>}
 
@@ -228,8 +229,8 @@ export const InventoryPage = () => {
         </section>
         <section className="admin-panel admin-panel-wide">
           <div className="admin-panel-heading"><div><span className="admin-step">03 · CATALOG</span><h2>Products in your store</h2></div><span className="collection-count">{products.length} products</span></div>
-          <div className="admin-product-grid">{products.map((product) => <article className="admin-product-card" key={product.id}><div className="admin-product-image">{product.images?.[0]?.image ? <img src={product.images[0].image} alt={product.product_name} /> : <span>No product image</span>}</div><div className="admin-product-copy"><p>{product.category?.category_name || 'Uncategorised'} · {product.brand?.brand_name || 'No brand'}</p><h3>{product.product_name}</h3><strong>৳{Number(product.discount_price) > 0 ? product.discount_price : product.price}</strong><div className="admin-row-actions"><button type="button" onClick={() => editProduct(product)}>Edit details</button><Link to={`/product/${product.slug}`}>Preview</Link><button type="button" className="danger" onClick={() => deleteProduct(product)}>Delete</button></div></div></article>)}</div>
-          {allImages.length > 0 && <div className="admin-image-library"><div className="admin-panel-heading"><div><span className="admin-step">IMAGE LIBRARY</span><h2>Uploaded product images</h2></div></div><div className="admin-image-grid">{allImages.map((image) => <article key={image.id}><img src={image.image} alt={image.productName} /><div><strong>{image.productName}</strong><button type="button" className="danger" onClick={() => deleteImage(image)}>Remove</button></div></article>)}</div></div>}
+          <Paginated items={products} pageSize={12} label="catalog products">{(pageProducts) => <div className="admin-product-grid">{pageProducts.map((product) => <article className="admin-product-card" key={product.id}><div className="admin-product-image">{product.images?.[0]?.image ? <img src={product.images[0].image} alt={product.product_name} /> : <span>No product image</span>}</div><div className="admin-product-copy"><p>{product.category?.category_name || 'Uncategorised'} · {product.brand?.brand_name || 'No brand'}</p><h3>{product.product_name}</h3><strong>৳{Number(product.discount_price) > 0 ? product.discount_price : product.price}</strong><div className="admin-row-actions"><button type="button" onClick={() => editProduct(product)}>Edit details</button><Link to={`/product/${product.slug}`}>Preview</Link><button type="button" className="danger" onClick={() => deleteProduct(product)}>Delete</button></div></div></article>)}</div>}</Paginated>
+          {allImages.length > 0 && <div className="admin-image-library"><div className="admin-panel-heading"><div><span className="admin-step">IMAGE LIBRARY</span><h2>Uploaded product images</h2></div></div><Paginated items={allImages} pageSize={16} label="product images">{(pageImages) => <div className="admin-image-grid">{pageImages.map((image) => <article key={image.id}><img src={image.image} alt={image.productName} /><div><strong>{image.productName}</strong><button type="button" className="danger" onClick={() => deleteImage(image)}>Remove</button></div></article>)}</div>}</Paginated></div>}
         </section>
         <section className="admin-panel admin-panel-wide">
           <div className="admin-panel-heading"><div><span className="admin-step">HOMEPAGE CONTENT</span><h2>Banners & featured slides</h2></div><span className="collection-count">{banners.length} banners</span></div>
@@ -241,7 +242,7 @@ export const InventoryPage = () => {
             <label>Banner image<input required type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => setBannerForm({ ...bannerForm, image: e.target.files?.[0] || null })} /></label>
             <div className="admin-form-actions"><button className="btn-submit" disabled={saving}>{saving ? 'Saving...' : 'Add banner'}</button></div>
           </form>
-          <div className="admin-entity-list">{banners.map((banner) => <div key={banner.id}><span><strong>{banner.title}</strong><small>{banner.subtitle || 'No subtitle'} · {banner.is_active ? 'Shown on storefront' : 'Hidden'}</small></span><div className="admin-row-actions"><button type="button" onClick={() => runAction(() => productsAPI.updateBanner(banner.id, { is_active: !banner.is_active }), banner.is_active ? 'Banner hidden.' : 'Banner published.')}>{banner.is_active ? 'Hide' : 'Publish'}</button><button type="button" className="danger" onClick={() => deleteBanner(banner)}>Delete</button></div></div>)}</div>
+          <Paginated items={banners} pageSize={8} label="banners">{(pageBanners) => <div className="admin-entity-list">{pageBanners.map((banner) => <div key={banner.id}><span><strong>{banner.title}</strong><small>{banner.subtitle || 'No subtitle'} · {banner.is_active ? 'Shown on storefront' : 'Hidden'}</small></span><div className="admin-row-actions"><button type="button" onClick={() => runAction(() => productsAPI.updateBanner(banner.id, { is_active: !banner.is_active }), banner.is_active ? 'Banner hidden.' : 'Banner published.')}>{banner.is_active ? 'Hide' : 'Publish'}</button><button type="button" className="danger" onClick={() => deleteBanner(banner)}>Delete</button></div></div>)}</div>}</Paginated>
         </section>
       </div>}
 
@@ -253,7 +254,7 @@ export const InventoryPage = () => {
           <label className="admin-field-wide">Description<textarea rows="2" value={entityForm.type === type ? entityForm.description : ''} onChange={(e) => setEntityForm({ ...entityForm, type, description: e.target.value })} /></label>
           <div className="admin-form-actions"><button className="btn-submit" disabled={saving}>{entityForm.type === type && entityForm.id ? 'Save changes' : `Create ${type}`}</button>{entityForm.type === type && entityForm.id && <button type="button" className="admin-quiet-button" onClick={() => setEntityForm({ type, id: null, name: '', description: '', parent_id: '' })}>Cancel</button>}</div>
         </form>
-        <div className="admin-entity-list">{list.map((item) => <div key={item.id}><span><strong>{item[nameKey]}</strong><small>{type === 'category' && item.parent ? `Subcategory of ${categories.find((category) => category.id === item.parent)?.category_name || 'category'} · ` : ''}{item.description || 'No description'}</small></span><div className="admin-row-actions"><button type="button" onClick={() => setEntityForm({ type, id: item.id, name: item[nameKey], description: item.description || '', parent_id: item.parent || '' })}>Edit</button><button type="button" className="danger" onClick={() => removeEntity(type, item)}>Delete</button></div></div>)}</div>
+        <Paginated items={list} pageSize={8} label="catalog entries">{(pageEntities) => <div className="admin-entity-list">{pageEntities.map((item) => <div key={item.id}><span><strong>{item[nameKey]}</strong><small>{type === 'category' && item.parent ? `Subcategory of ${categories.find((category) => category.id === item.parent)?.category_name || 'category'} · ` : ''}{item.description || 'No description'}</small></span><div className="admin-row-actions"><button type="button" onClick={() => setEntityForm({ type, id: item.id, name: item[nameKey], description: item.description || '', parent_id: item.parent || '' })}>Edit</button><button type="button" className="danger" onClick={() => removeEntity(type, item)}>Delete</button></div></div>)}</div>}</Paginated>
       </section>)}</div>}
     </main>
   );
