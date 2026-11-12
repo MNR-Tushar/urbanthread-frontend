@@ -9,6 +9,7 @@ export const ProductDetailPage = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [product, setProduct] = useState(null);
+  const [imageIndex, setImageIndex] = useState(0);
   const [variants, setVariants] = useState([]);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
@@ -19,6 +20,9 @@ export const ProductDetailPage = () => {
   const [error, setError] = useState('');
   const [addSuccess, setAddSuccess] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [wishlistId, setWishlistId] = useState(null);
+  const [wishlistBusy, setWishlistBusy] = useState(false);
+  const [wishlistError, setWishlistError] = useState('');
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
   const [reviewSaving, setReviewSaving] = useState(false);
@@ -28,7 +32,7 @@ export const ProductDetailPage = () => {
 
   useEffect(() => {
     let active = true;
-    setProduct(null); setVariants([]); setSelectedColor(''); setSelectedSize(''); setLoading(true); setError('');
+    setProduct(null); setImageIndex(0); setVariants([]); setSelectedColor(''); setSelectedSize(''); setLoading(true); setError('');
     productsAPI.getProduct(slug)
       .then(async (productRes) => {
         if (!active) return;
@@ -50,6 +54,33 @@ export const ProductDetailPage = () => {
       .catch(() => { if (active) setReviewError('Reviews could not be loaded.'); });
     return () => { active = false; };
   }, [product?.id]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !product?.id) { setWishlistId(null); return undefined; }
+    let active = true;
+    productsAPI.getWishlist().then(({ data }) => {
+      const items = data.results || data;
+      const savedItem = items.find((item) => Number(item.product?.id) === Number(product.id));
+      if (active) setWishlistId(savedItem?.id || null);
+    }).catch(() => { if (active) setWishlistId(null); });
+    return () => { active = false; };
+  }, [isAuthenticated, product?.id]);
+
+  const toggleWishlist = async () => {
+    if (!isAuthenticated) { navigate('/login'); return; }
+    setWishlistBusy(true); setWishlistError('');
+    try {
+      if (wishlistId) {
+        await productsAPI.removeFromWishlist(wishlistId);
+        setWishlistId(null);
+      } else {
+        const { data } = await productsAPI.addToWishlist(product.id);
+        setWishlistId(data.id);
+      }
+    } catch (err) {
+      setWishlistError(err.response?.data?.detail || 'Could not update your wishlist. Please try again.');
+    } finally { setWishlistBusy(false); }
+  };
 
   const submitReview = async (event) => {
     event.preventDefault();
@@ -100,17 +131,41 @@ export const ProductDetailPage = () => {
   const availableQuantity = variantAvailability?.quantity ?? 0;
   const approvedReviews = reviews.filter((review) => review.is_approved);
   const displayedPendingReview = pendingReview || reviews.find((review) => !review.is_approved);
+  const productImages = (product.images || []).slice(0, 5);
+  const showPreviousImage = () => setImageIndex((current) => (current - 1 + productImages.length) % productImages.length);
+  const showNextImage = () => setImageIndex((current) => (current + 1) % productImages.length);
 
   return (
     <main className="page product-detail-page">
-      <div className="product-images">
-        {product.images?.length ? product.images.map((image) => (
-          <img key={image.id} src={image.image} alt={product.product_name} className="product-img" />
-        )) : <div className="product-img product-image-placeholder">No image available</div>}
+      <div className="product-gallery">
+        <div className="product-gallery-main">
+          {productImages.length ? <img src={productImages[imageIndex]?.image} alt={`${product.product_name} image ${imageIndex + 1}`} className="product-img" />
+            : <div className="product-img product-image-placeholder">No image available</div>}
+          {productImages.length > 1 && <>
+            <button type="button" className="product-gallery-arrow previous" onClick={showPreviousImage} aria-label="Previous product image">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
+            </button>
+            <button type="button" className="product-gallery-arrow next" onClick={showNextImage} aria-label="Next product image">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg>
+            </button>
+            <span className="product-gallery-count">{imageIndex + 1} / {productImages.length}</span>
+          </>}
+        </div>
+        {productImages.length > 1 && <div className="product-gallery-thumbnails" aria-label="Product images">
+          {productImages.slice(0, 5).map((image, index) => <button key={image.id} type="button" className={index === imageIndex ? 'active' : ''} onClick={() => setImageIndex(index)} aria-label={`Show image ${index + 1}`} aria-current={index === imageIndex ? 'true' : undefined}>
+            <img src={image.image} alt="" />
+          </button>)}
+        </div>}
       </div>
       <section className="product-info">
         <p className="eyebrow">{product.category?.category_name || 'UrbanThread collection'}</p>
-        <h1>{product.product_name}</h1>
+        <div className="product-info-title-row">
+          <h1>{product.product_name}</h1>
+          <button type="button" className={`product-wishlist-toggle${wishlistId ? ' saved' : ''}`} onClick={toggleWishlist} disabled={wishlistBusy} aria-label={wishlistId ? 'Remove from wishlist' : 'Add to wishlist'} aria-pressed={Boolean(wishlistId)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" /></svg>
+          </button>
+        </div>
+        {wishlistError && <p className="product-wishlist-error" role="alert">{wishlistError}</p>}
         <p>{product.description}</p>
         <div className="product-meta"><span><strong>Brand:</strong> {product.brand?.brand_name || '—'}</span></div>
         <div className="product-price">৳{product.discount_price > 0 ? product.discount_price : product.price}
@@ -155,7 +210,7 @@ export const ProductDetailPage = () => {
           {isAuthenticated ? <>
             <label htmlFor="product-review-rating">Rating</label>
             <select id="product-review-rating" value={reviewRating} onChange={(event) => setReviewRating(event.target.value)}>
-              {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} {rating === 1 ? 'star' : 'stars'}</option>)}
+              {[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{String.fromCodePoint(9733).repeat(rating)}{String.fromCodePoint(9734).repeat(5 - rating)} ({rating}/5)</option>)}
             </select>
             <label htmlFor="product-review-text">Your review</label>
             <textarea id="product-review-text" value={reviewText} onChange={(event) => setReviewText(event.target.value)} rows="3" maxLength="1200" required placeholder="What did you think of this product?" />
