@@ -815,3 +815,184 @@ html { font-size: 17px; }
   .product-card-content { padding-top: 9px; }
   .product-card h3 { font-size: .94rem; }
 }
+
+/* Consistent, comfortable sizing for storefront and admin forms. */
+:is(.auth-form, .profile-form, .address-form, .review-form, .payment-form,
+    .checkout-form, .admin-form-grid, .admin-upload-form, .admin-stock-filters,
+    .refund-dialog, .coupon-validate) :is(label, legend) {
+  font-size: .84rem;
+  line-height: 1.4;
+}
+:is(.auth-form, .profile-form, .address-form, .review-form, .payment-form,
+    .checkout-form, .checkout-field, .admin-form-grid, .admin-upload-form,
+    .admin-stock-filters, .refund-dialog, .coupon-validate)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  min-height: 40px;
+  padding: 9px 11px;
+  font-size: .9rem;
+  line-height: 1.45;
+}
+:is(.auth-form, .profile-form, .address-form, .review-form, .payment-form,
+    .checkout-form, .admin-form-grid, .admin-upload-form, .refund-dialog,
+    .coupon-validate) textarea {
+  min-height: 96px;
+}
+:is(.auth-form, .profile-form, .address-form, .review-form, .payment-form,
+    .checkout-form, .admin-panel, .admin-upload-form, .refund-dialog,
+    .coupon-validate) :is(h1, h2, h3) {
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+.auth-form h1 { font-size: 1.7rem; }
+:is(.auth-form, .profile-form, .address-form, .review-form, .payment-form,
+    .checkout-form, .admin-form-actions, .admin-upload-form, .refund-dialog,
+    .coupon-validate) :is(button, .btn-submit, .btn-secondary) {
+  min-height: 40px;
+  padding: 9px 15px;
+  font-size: .9rem;
+}
+
+/* Bring customer page titles and supporting text onto one readable scale. */
+.page > h1 { font-size: clamp(2rem, 3.2vw, 2.65rem); line-height: 1.12; }
+.product-info h1 { font-size: clamp(2rem, 3.2vw, 2.7rem); line-height: 1.12; }
+.product-info > p:not(.eyebrow) { font-size: 1rem; line-height: 1.55; }
+.product-info .product-price { font-size: 1.5rem; }
+.product-info label, .variant-group label, .quantity-field label { font-size: .95rem; }
+.product-info select, .product-info input { font-size: .95rem; }
+.cart-item { padding: 18px 20px; }
+.item-info h3 { font-size: 1.15rem; }
+.item-info p, .order-card > p, .order-item { font-size: .88rem; line-height: 1.5; }
+.cart-summary h2 { font-size: 1.45rem; }
+.cart-summary > p, .summary-total, .checkout-form > label, .checkout-field label { font-size: .9rem !important; }
+.checkout-form input, .checkout-field select { font-size: .92rem; }
+.order-header h3 { font-size: 1.15rem; }
+.status, .stock { font-size: .76rem; }
+
+/* Compact, consistent type and controls across the complete storefront/admin UI. */
+html { font-size: 16px; }
+body { font-size: 15px; }
+h1, .page > h1, .admin-page-heading h1 { font-size: clamp(1.8rem, 3vw, 2.35rem); line-height: 1.16; }
+h2 { font-size: clamp(1.3rem, 2.2vw, 1.65rem); line-height: 1.25; }
+h3 { font-size: 1.12rem; line-height: 1.3; }
+.home-hero h1 { font-size: clamp(2.7rem, 5vw, 4.5rem); line-height: 1; }
+.collection-heading h2 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+.product-info h1 { font-size: clamp(1.9rem, 3vw, 2.5rem); line-height: 1.16; }
+.page { padding-top: 36px; padding-bottom: 56px; }
+.auth-form { width: min(100%, 420px); padding: 26px; border-radius: 8px; }
+.payment-result-card { width: min(100%, 600px); padding: 32px; border-radius: 8px; }
+:is(.cart-item, .order-card, .inventory-item, .coupon-card, .review-card,
+    .profile-info, .profile-details, .addresses, .review-form, .payment-form,
+    .cart-summary, .admin-panel, .coupon-validate) { padding: 16px; }
+:is(.auth-form, .profile-form, .address-form, .review-form, .payment-form,
+    .checkout-form, .checkout-field, .admin-form-grid, .admin-upload-form,
+    .admin-stock-filters, .refund-dialog, .coupon-validate)
+  :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea) {
+  min-height: 38px;
+  padding: 8px 10px;
+  font-size: .875rem;
+}
+:is(.auth-form, .profile-form, .address-form, .review-form, .payment-form,
+    .checkout-form, .admin-form-grid, .admin-upload-form, .admin-stock-filters,
+    .refund-dialog, .coupon-validate) :is(label, legend) { font-size: .8rem; }
+:is(.auth-form, .profile-form, .address-form, .review-form, .payment-form,
+    .checkout-form, .admin-panel, .admin-upload-form, .refund-dialog,
+    .coupon-validate) :is(h1, h2, h3) { font-size: 1.12rem; }
+:is(.auth-form, .profile-form, .address-form, .review-form, .payment-form,
+    .checkout-form, .admin-form-actions, .admin-upload-form, .refund-dialog,
+    .coupon-validate) :is(button, .btn-submit, .btn-secondary) {
+  min-height: 38px;
+  padding: 8px 13px;
+  font-size: .85rem;
+}
+.admin-page-heading h1 { font-size: clamp(1.8rem, 3vw, 2.35rem); }
+.admin-stat-card strong { font-size: 1.55rem; }
+.admin-form-grid > label, .admin-upload-form > label:not(.upload-dropzone) { font-size: .8rem; }
+.admin-form-grid input:not([type=checkbox]), .admin-form-grid select,
+.admin-form-grid textarea, .admin-upload-form select, .admin-stock-filters select {
+  min-height: 38px;
+  padding: 8px 10px;
+  font-size: .875rem;
+}
+.admin-form-actions .btn-submit, .admin-form-actions .btn-secondary,
+.admin-upload-form > .btn-submit { min-height: 38px; padding: 8px 13px; font-size: .85rem; }
+@media (max-width: 700px) {
+  .page { padding-top: 28px; padding-bottom: 44px; }
+  .auth-form, .payment-result-card { padding: 22px 18px; }
+  .home-hero h1 { font-size: clamp(2.6rem, 10vw, 3.6rem); }
+}
+
+/* Compact product detail and integrated customer reviews. */
+.product-detail-page { width: min(1100px, calc(100% - 48px)); grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr); gap: 28px 36px; padding-top: 28px; }
+.product-images .product-img { height: clamp(240px, 31vw, 350px); }
+.product-info { padding: 4px 0; }
+.product-info h1 { margin-bottom: 10px; font-size: clamp(1.8rem, 2.8vw, 2.35rem); }
+.product-info > p:not(.eyebrow) { margin: 8px 0; font-size: .94rem; }
+.product-info .product-price { margin: 14px 0; font-size: 1.35rem; }
+.product-info .product-meta { margin: 8px 0; font-size: .86rem; }
+.product-info .variant-group { gap: 5px; margin: 10px 0; }
+.product-info .variant-group select, .product-info .variant-group input { width: min(100%, 340px); min-height: 38px; padding: 7px 10px; font-size: .88rem; }
+.product-info .btn-add { min-height: 40px; margin-top: 4px; padding: 9px 15px; font-size: .88rem; }
+.product-reviews { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(230px, .72fr) minmax(0, 1.28fr); align-items: start; gap: 16px 28px; margin-top: 10px; padding-top: 22px; border-top: 1px solid var(--line); }
+.product-reviews-heading { grid-column: 1 / -1; display: flex; align-items: end; justify-content: space-between; gap: 12px; }
+.product-reviews-heading .eyebrow { margin: 0 0 4px; font-size: .65rem; }
+.product-reviews-heading h2 { margin: 0; font: 500 1.45rem Georgia, serif; }
+.product-reviews-heading > span { color: var(--muted); font-size: .82rem; }
+.product-review-form { display: grid; gap: 7px; padding: 15px; border: 1px solid var(--line); background: #fffefa; }
+.product-review-form h3 { margin: 0 0 3px; font: 500 1.08rem Georgia, serif; }
+.product-review-form label { color: #4c544a; font-size: .8rem; font-weight: 650; }
+.product-review-form select, .product-review-form textarea { width: 100%; min-height: 36px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 3px; background: #fff; font: inherit; font-size: .86rem; }
+.product-review-form textarea { min-height: 78px; resize: vertical; }
+.product-review-form button { justify-self: start; min-height: 36px; padding: 7px 12px; border: 0; border-radius: 3px; background: var(--green); color: white; font-size: .84rem; font-weight: 650; }
+.product-review-form button:disabled { opacity: .55; }
+.product-review-form > p { margin: 0; color: var(--muted); font-size: .88rem; }
+.product-review-form a { color: var(--green); font-weight: 650; }
+.product-review-list { display: grid; gap: 9px; }
+.product-review-card { padding: 12px 14px; border: 1px solid var(--line); background: #fffefa; }
+.product-review-card > div { display: flex; justify-content: space-between; gap: 12px; color: #384337; font-size: .86rem; }
+.product-review-card > p, .product-review-empty { margin: 7px 0; color: #5f665b; font-size: .88rem; line-height: 1.5; }
+.product-review-card time { color: #858a80; font-size: .75rem; }
+.product-review-card.pending-review { border-style: dashed; background: #f7f8f3; }
+.product-review-card.pending-review > div > span { color: #887043; font-size: .76rem; }
+.product-review-empty { padding: 12px 0; }
+.product-reviews > .success, .product-reviews > .error { grid-column: 1 / -1; margin: 0; padding: 8px 11px; font-size: .84rem; }
+@media (max-width: 700px) {
+  .product-detail-page { width: min(100% - 34px, 540px); grid-template-columns: 1fr; gap: 18px; }
+  .product-images .product-img { height: clamp(220px, 72vw, 340px); }
+  .product-reviews { grid-template-columns: 1fr; gap: 12px; }
+  .product-reviews-heading { grid-column: 1; }
+}
+.product-detail-page { width: min(1180px, calc(100% - 48px)); grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 24px 32px; }
+.product-images { min-width: 0; }
+.product-images .product-img { width: 100%; height: clamp(250px, 29vw, 370px); object-fit: contain; }
+.product-image-placeholder { font-size: 1.1rem; }
+.product-info { position: static; align-self: start; max-width: 560px; }
+.product-info .eyebrow { font-size: .7rem; }
+.product-info h1 { font-size: clamp(1.75rem, 2.5vw, 2.2rem); }
+.product-info .product-price { font-size: 1.25rem; }
+.product-info .variant-group { margin: 8px 0; }
+.product-info .variant-group label { font-size: .86rem; }
+.product-info .variant-group select, .product-info .variant-group input { min-height: 36px; font-size: .86rem; }
+.product-info .btn-add { min-height: 38px; font-size: .84rem; }
+@media (max-width: 700px) {
+  .product-detail-page { width: min(100% - 34px, 540px); grid-template-columns: 1fr; gap: 16px; }
+  .product-images .product-img { height: clamp(220px, 68vw, 330px); }
+}
+
+/* Compact order history and responsive order card grid. */
+.orders-page { width: min(1080px, calc(100% - 48px)); padding-top: 28px; padding-bottom: 44px; }
+.orders-page > h1 { margin-bottom: 18px; font-size: clamp(1.75rem, 2.6vw, 2.2rem); }
+.orders-list { grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: 12px; }
+.orders-page .order-card { grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; gap: 7px 12px; min-width: 0; padding: 14px; }
+.orders-page .order-header { align-items: center; gap: 8px; padding-bottom: 9px; }
+.orders-page .order-header h3 { margin: 0; font-size: 1rem; overflow-wrap: anywhere; }
+.orders-page .order-card > p { font-size: .8rem; line-height: 1.4; }
+.orders-page .order-items { gap: 3px; margin-top: 4px; padding-top: 8px; }
+.orders-page .order-item { padding: 2px 0; font-size: .8rem; }
+.orders-page .order-track-link, .orders-page .btn-cancel { grid-column: auto; justify-self: start; min-height: 34px; padding: 7px 10px; font-size: .78rem; }
+.orders-page .sales-report-panel { margin-bottom: 16px; padding: 14px; }
+.orders-page .empty-orders { padding: 32px 18px; }
+@media (max-width: 700px) {
+  .orders-page { width: min(100% - 34px, 540px); padding-top: 24px; }
+  .orders-list { grid-template-columns: 1fr; gap: 10px; }
+  .orders-page .order-card { grid-template-columns: 1fr; }
+}
