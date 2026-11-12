@@ -98,14 +98,14 @@ export const productsAPI = {
 
 export const cartAPI = {
   getCart: () => api.get('/cart/my_cart/'),
-  addItem: (data) => api.post('/cart/add_item/', data),
-  updateItem: (data) => api.patch('/cart/update_item/', data),
-  removeItem: (itemId) => api.delete('/cart/remove_item/', { data: { item_id: itemId } }),
-  clearCart: () => api.delete('/cart/clear_cart/'),
+  addItem: (data) => api.post('/cart/add_item/', data).then((response) => { window.dispatchEvent(new Event('urbanthread:cart-updated')); return response; }),
+  updateItem: (data) => api.patch('/cart/update_item/', data).then((response) => { window.dispatchEvent(new Event('urbanthread:cart-updated')); return response; }),
+  removeItem: (itemId) => api.delete('/cart/remove_item/', { data: { item_id: itemId } }).then((response) => { window.dispatchEvent(new Event('urbanthread:cart-updated')); return response; }),
+  clearCart: () => api.delete('/cart/clear_cart/').then((response) => { window.dispatchEvent(new Event('urbanthread:cart-updated')); return response; }),
 };
 
 export const ordersAPI = {
-  createOrder: (data) => api.post('/orders/create_order/', data),
+  createOrder: (data) => api.post('/orders/create_order/', data).then((response) => { window.dispatchEvent(new Event('urbanthread:cart-updated')); return response; }),
   getOrders: () => api.get('/orders/order_history/'),
   getOrder: (id) => api.get(`/orders/${id}/`),
   cancelOrder: (id) => api.patch(`/orders/${id}/cancel_order/`),

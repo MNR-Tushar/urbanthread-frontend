@@ -1,13 +1,14 @@
 ﻿import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
-import { productsAPI } from '../api';
+import { cartAPI, productsAPI } from '../api';
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [cartCount, setCartCount] = useState(0);
   const profileMenuRef = useRef(null);
 
   useEffect(() => {
@@ -25,6 +26,19 @@ export const Navbar = () => {
       document.removeEventListener('keydown', closeOnEscape);
     };
   }, [profileOpen]);
+
+  useEffect(() => {
+    let active = true;
+    const refreshCartCount = () => {
+      if (!isAuthenticated) { setCartCount(0); return; }
+      cartAPI.getCart().then(({ data }) => {
+        if (active) setCartCount((data.items || []).reduce((total, item) => total + Number(item.quantity || 0), 0));
+      }).catch(() => { if (active) setCartCount(0); });
+    };
+    refreshCartCount();
+    window.addEventListener('urbanthread:cart-updated', refreshCartCount);
+    return () => { active = false; window.removeEventListener('urbanthread:cart-updated', refreshCartCount); };
+  }, [isAuthenticated, user?.id]);
 
   const handleLogout = () => {
     setProfileOpen(false);
@@ -44,7 +58,7 @@ export const Navbar = () => {
         <div className="navbar-actions">
           <Link to="/">Home</Link>
           <Link to="/products">Shop</Link>
-          <Link to="/cart" className="nav-cart-link"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.4L22 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg><span>Bag</span></Link>
+          <Link to="/cart" className="nav-cart-link" aria-label={`Bag, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}`}><span className="nav-cart-icon-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.4L22 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>{cartCount > 0 && <span className="nav-cart-count">{cartCount > 99 ? '99+' : cartCount}</span>}</span><span>Bag</span></Link>
           {isAuthenticated ? <div className="profile-menu-wrap" ref={profileMenuRef}>
             <button
               type="button"

@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/useAuth';
 import { Loading } from '../components/common';
 
 export const ProductDetailPage = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const [product, setProduct] = useState(null);
@@ -21,33 +21,36 @@ export const ProductDetailPage = () => {
 
   useEffect(() => {
     let active = true;
-    Promise.all([productsAPI.getProduct(id), inventoryAPI.getProductInventory({ product_id: id })])
-      .then(([productRes, inventoryRes]) => {
+    setProduct(null); setVariants([]); setSelectedColor(''); setSelectedSize(''); setLoading(true); setError('');
+    productsAPI.getProduct(slug)
+      .then(async (productRes) => {
         if (!active) return;
         setProduct(productRes.data);
+        const inventoryRes = await inventoryAPI.getProductInventory({ product_id: productRes.data.id });
+        if (!active) return;
         setVariants(inventoryRes.data.results || inventoryRes.data);
       })
       .catch(() => { if (active) setError('Product or product options could not be loaded.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [id]);
+  }, [slug]);
 
   useEffect(() => {
-    if (!selectedColor || !selectedSize) return;
+    if (!product?.id || !selectedColor || !selectedSize) return;
     let active = true;
-    const key = `${id}:${selectedColor}:${selectedSize}`;
-    inventoryAPI.checkAvailability({ product_id: id, color_id: selectedColor, size_id: selectedSize })
+    const key = `${product?.id}:${selectedColor}:${selectedSize}`;
+    inventoryAPI.checkAvailability({ product_id: product.id, color_id: selectedColor, size_id: selectedSize })
       .then(({ data }) => { if (active) setAvailability({ key, data }); })
       .catch(() => { if (active) setAvailability({ key, data: { available: false, quantity: 0 } }); });
     return () => { active = false; };
-  }, [id, selectedColor, selectedSize]);
+  }, [product?.id, selectedColor, selectedSize]);
 
   const addToCart = async () => {
     if (!isAuthenticated) { navigate('/login'); return; }
     if (!selectedColor || !selectedSize) { setError('Please choose a color and size.'); return; }
     setAdding(true); setError(''); setAddSuccess(false);
     try {
-      await cartAPI.addItem({ product_id: Number(id), color_id: Number(selectedColor), size_id: Number(selectedSize), quantity });
+      await cartAPI.addItem({ product_id: product.id, color_id: Number(selectedColor), size_id: Number(selectedSize), quantity });
       setAddSuccess(true);
     } catch (err) {
       setError(err.response?.data?.error || err.response?.data?.detail || 'Could not add this item to your cart.');
@@ -56,7 +59,7 @@ export const ProductDetailPage = () => {
 
   if (loading) return <Loading />;
   if (!product) return <main className="page"><div className="error">{error || 'Product not found.'}</div><Link to="/products">Back to products</Link></main>;
-  const variantKey = `${id}:${selectedColor}:${selectedSize}`;
+  const variantKey = `${product?.id}:${selectedColor}:${selectedSize}`;
   const variantAvailability = availability?.key === variantKey ? availability.data : null;
   const availableQuantity = variantAvailability?.quantity ?? 0;
 

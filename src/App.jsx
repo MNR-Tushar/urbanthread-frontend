@@ -25,7 +25,7 @@ function AppWithAuth() {
       <Routes>
         <Route path="/" element={<ProductsPage />} />
         <Route path="/products" element={<ProductsPage />} />
-        <Route path="/product/:id" element={<ProductDetailPage />} />
+        <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
         <Route path="/login" element={loading ? <div className="loading">Loading...</div> : !isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />} />
         <Route path="/register" element={loading ? <div className="loading">Loading...</div> : !isAuthenticated ? <RegisterPage /> : <Navigate to="/" replace />} />

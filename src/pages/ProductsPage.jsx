@@ -79,7 +79,7 @@ export const ProductsPage = () => {
         <div className="home-hero-art" style={(activeBanner?.image || featuredImage) ? { backgroundImage: `linear-gradient(180deg, rgba(22,31,26,.02), rgba(22,31,26,.15)), url("${activeBanner?.image || featuredImage}")` } : undefined}>
           {!featuredImage && <div className="hero-art-shape"><span>UT</span></div>}
           <div className="hero-edition">URBANTHREAD<br /><strong>THE EVERYDAY EDIT</strong></div>
-          {featured && <Link className="hero-feature-card" to={`/product/${featured.id}`}>
+          {featured && <Link className="hero-feature-card" to={`/product/${featured.slug}`}>
             <span className="feature-label">The collection pick</span><strong>{featured.product_name}</strong>
             <span className="feature-price">{taka(priceOf(featured))} <span aria-hidden="true">↗</span></span>
           </Link>}
@@ -113,15 +113,15 @@ export const ProductsPage = () => {
             const image = product.images?.[0]?.image;
             const discounted = Number(product.discount_price) > 0;
             return <article key={product.id} className="product-card">
-              <Link className="product-image-link" to={`/product/${product.id}`} aria-label={`View ${product.product_name}`}>
+              <Link className="product-image-link" to={`/product/${product.slug}`} aria-label={`View ${product.product_name}`}>
                 {image ? <img src={image} alt={product.product_name} className="product-img" loading={index > 3 ? 'lazy' : 'eager'} /> : <div className="product-img product-image-placeholder">UrbanThread</div>}
                 {discounted && <span className="product-badge">SPECIAL PRICE</span>}
                 <span className="product-card-arrow" aria-hidden="true">↗</span>
               </Link>
               <div className="product-card-content">
                 <div className="product-card-overline"><span>{product.category?.category_name || 'EVERYDAY ESSENTIALS'}</span><span>UT. {String(product.id).padStart(3, '0')}</span></div>
-                <Link className="product-title-link" to={`/product/${product.id}`}><h3>{product.product_name}</h3></Link>
-                <div className="product-card-bottom"><div className="product-price">{taka(priceOf(product))}{discounted && <span className="discount">{taka(product.price)}</span>}</div><Link className="product-view-link" to={`/product/${product.id}`}>Discover <span aria-hidden="true">→</span></Link></div>
+                <Link className="product-title-link" to={`/product/${product.slug}`}><h3>{product.product_name}</h3></Link>
+                <div className="product-card-bottom"><div className="product-price">{taka(priceOf(product))}{discounted && <span className="discount">{taka(product.price)}</span>}</div><Link className="product-view-link" to={`/product/${product.slug}`}>Discover <span aria-hidden="true">→</span></Link></div>
               </div>
             </article>;
           })}

@@ -112,7 +112,7 @@ export const CartPage = () => {
           <section className="cart-items" aria-label="Cart items">
             {items.map((item) => <article key={item.id} className="cart-item">
               <div className="item-info">
-                <h3>{item.product?.product_name}</h3>
+                <h3><Link className="cart-product-link" to={`/product/${item.product?.slug}`}>{item.product?.product_name}</Link></h3>
                 <p>Color: {item.color?.color || '—'} · Size: {item.size?.size_type || '—'}</p>
                 <p>Unit price: ৳{item.product?.discount_price > 0 ? item.product.discount_price : item.product?.price}</p>
                 <p>Subtotal: ৳{item.subtotal}</p>

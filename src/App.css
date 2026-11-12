@@ -111,6 +111,8 @@ h2 { font-size: clamp(1.45rem, 2.5vw, 2rem); }
 .cart-item, .order-card, .inventory-item, .coupon-card, .review-card, .profile-info, .profile-details, .addresses, .review-form, .payment-form, .cart-summary { padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; box-shadow: 0 5px 20px rgba(33,45,33,.035); }
 .cart-item { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .item-info h3, .order-card h3, .inventory-item h3, .coupon-card h3 { margin-bottom: 8px; }
+.cart-product-link { color: inherit; text-decoration: none; }
+.cart-product-link:hover { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
 .item-info p, .order-card p, .inventory-item p, .profile-info p, .profile-details p { margin-top: 5px; color: var(--muted); }
 .item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .item-actions button, .btn-cancel, .btn-clear { min-height: 38px; padding: 8px 13px; border: 1px solid var(--line); border-radius: 9px; background: #f3f4ef; font-weight: 700; }
@@ -256,6 +258,8 @@ body { background: #fbfaf7; }
 .nav-search input::placeholder { color: #969a91; }
 .nav-search button { height: 31px; padding: 0 12px; border: 0; border-radius: 3px; background: #e8eadf; color: #44513e; font-size: .71rem; font-weight: 700; cursor: pointer; }
 .nav-cart-link { display: inline-flex; align-items: center; gap: 6px; }
+.nav-cart-icon-wrap { position: relative; display: inline-flex; }
+.nav-cart-count { position: absolute; top: -9px; right: -10px; display: grid; min-width: 17px; height: 17px; place-items: center; padding: 0 4px; border: 2px solid #fffefa; border-radius: 999px; background: #536b4d; color: white; font: 700 10px/1 'Segoe UI', sans-serif; }
 .profile-menu-trigger { min-height: 38px; padding: 6px 13px; border-radius: 4px; font-size: .8rem; }
 .profile-dropdown { border-radius: 7px; }
 
