@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { ordersAPI } from '../api';
 import { useAuth } from '../contexts/useAuth';
 import { Loading } from '../components/common';
@@ -84,6 +84,7 @@ export const OrdersPage = () => {
                       </div>
                     ))}
                   </div>
+                  <Link className="btn-secondary order-track-link" to={`/orders/${order.id}/track`}>Track order</Link>
                   {order.order_status === 'pending' && (
                     <button onClick={() => cancelOrder(order.id)} className="btn-cancel">Cancel Order</button>
                   )}

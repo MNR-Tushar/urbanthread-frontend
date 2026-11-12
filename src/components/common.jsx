@@ -1,7 +1,9 @@
 ﻿import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
-import { cartAPI, productsAPI } from '../api';
+import { authAPI, cartAPI, productsAPI } from '../api';
+
+const MenuIcon = ({ name }) => <svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{name === 'account' ? <><circle cx="12" cy="8" r="3.5" /><path d="M5 20c.5-4 2.8-6 7-6s6.5 2 7 6" /><circle cx="12" cy="12" r="10" /></> : name === 'orders' ? <><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M8 8h8M8 12h8M8 16h5" /></> : name === 'reviews' ? <path d="m12 2.5 2.9 6 6.6 1-4.8 4.7 1.2 6.7L12 17.7l-5.9 3.2 1.1-6.7-4.8-4.7 6.7-1L12 2.5Z" /> : name === 'payments' ? <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 9h18M7 15h4" /></> : name === 'coupons' ? <><path d="M3 12 12 3h8v8l-9 10-8-9Z" /><circle cx="16" cy="8" r="1" /></> : name === 'wishlist' ? <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" /> : <><rect x="4" y="4" width="6" height="6" rx="1" /><rect x="14" y="4" width="6" height="6" rx="1" /><rect x="4" y="14" width="6" height="6" rx="1" /><rect x="14" y="14" width="6" height="6" rx="1" /></>}</g></svg>;
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -9,6 +11,7 @@ export const Navbar = () => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [cartCount, setCartCount] = useState(0);
+  const [profileAvatar, setProfileAvatar] = useState('');
   const profileMenuRef = useRef(null);
 
   useEffect(() => {
@@ -40,6 +43,17 @@ export const Navbar = () => {
     return () => { active = false; window.removeEventListener('urbanthread:cart-updated', refreshCartCount); };
   }, [isAuthenticated, user?.id]);
 
+  useEffect(() => {
+    let active = true;
+    if (!isAuthenticated || !user?.id) { setProfileAvatar(''); return undefined; }
+    authAPI.getProfiles().then(({ data }) => {
+      const profiles = Array.isArray(data) ? data : data?.results || [];
+      const profile = profiles.find((item) => Number(item.user) === Number(user.id));
+      if (active) setProfileAvatar(profile?.image || '');
+    }).catch(() => { if (active) setProfileAvatar(''); });
+    return () => { active = false; };
+  }, [isAuthenticated, user?.id]);
+
   const handleLogout = () => {
     setProfileOpen(false);
     logout();
@@ -59,24 +73,27 @@ export const Navbar = () => {
           <Link to="/">Home</Link>
           <Link to="/products">Shop</Link>
           <Link to="/cart" className="nav-cart-link" aria-label={`Bag, ${cartCount} ${cartCount === 1 ? 'item' : 'items'}`}><span className="nav-cart-icon-wrap"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h8.8a2 2 0 0 0 1.9-1.4L22 8H6"/><circle cx="10" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>{cartCount > 0 && <span className="nav-cart-count">{cartCount > 99 ? '99+' : cartCount}</span>}</span><span>Bag</span></Link>
-          {isAuthenticated ? <div className="profile-menu-wrap" ref={profileMenuRef}>
+          {isAuthenticated ? <div className="profile-menu-wrap" ref={profileMenuRef} onPointerEnter={(event) => { if (event.pointerType === 'mouse') setProfileOpen(true); }} onPointerLeave={(event) => { if (event.pointerType === 'mouse') setProfileOpen(false); }}>
             <button
               type="button"
               className="profile-menu-trigger"
               aria-haspopup="menu"
               aria-expanded={profileOpen}
-              onClick={() => setProfileOpen((open) => !open)}
+              onClick={() => setProfileOpen(true)}
             >
-              Profile <span aria-hidden="true">{profileOpen ? '⌃' : '⌄'}</span>
+              <span className="profile-trigger-avatar">{profileAvatar ? <img src={profileAvatar} alt="" /> : (user?.first_name || user?.username || 'U').slice(0, 1).toUpperCase()}</span>
+              <span className="profile-trigger-copy"><small>Hello,</small><strong>{user?.first_name || user?.username || 'Account'}</strong></span>
+              <svg className="profile-trigger-chevron" viewBox="0 0 16 16" aria-hidden="true"><path d={profileOpen ? 'm3 10 5-5 5 5' : 'm3 6 5 5 5-5'} /></svg>
             </button>
             {profileOpen && <div className="profile-dropdown" role="menu">
-              <p className="profile-dropdown-welcome">Welcome, <strong>{user?.username}</strong></p>
-              <Link role="menuitem" to="/profile" onClick={() => setProfileOpen(false)}>Profile</Link>
-              <Link role="menuitem" to="/orders" onClick={() => setProfileOpen(false)}>My Orders</Link>
-              <Link role="menuitem" to="/coupons" onClick={() => setProfileOpen(false)}>Coupons</Link>
-              <Link role="menuitem" to="/payments" onClick={() => setProfileOpen(false)}>Payments</Link>
-              {(user?.is_staff || user?.is_superuser) && <><Link role="menuitem" to="/admin" onClick={() => setProfileOpen(false)}>Admin dashboard</Link><Link role="menuitem" to="/inventory" onClick={() => setProfileOpen(false)}>Products & inventory</Link></>}
-              <button type="button" role="menuitem" onClick={handleLogout}>Logout</button>
+              <Link role="menuitem" to="/profile" onClick={() => setProfileOpen(false)}><MenuIcon name="account" /><span>Account Info</span></Link>
+              <Link role="menuitem" to="/orders" onClick={() => setProfileOpen(false)}><MenuIcon name="orders" /><span>Orders &amp; Tracking</span></Link>
+              <Link role="menuitem" to="/reviews" onClick={() => setProfileOpen(false)}><MenuIcon name="reviews" /><span>Rating &amp; Reviews</span></Link>
+              <Link role="menuitem" to="/payments" onClick={() => setProfileOpen(false)}><MenuIcon name="payments" /><span>Payment Info</span></Link>
+              <Link role="menuitem" to="/wishlist" onClick={() => setProfileOpen(false)}><MenuIcon name="wishlist" /><span>Wishlist</span></Link>
+              <Link role="menuitem" to="/coupons" onClick={() => setProfileOpen(false)}><MenuIcon name="coupons" /><span>Coupons</span></Link>
+              {(user?.is_staff || user?.is_superuser) && <><Link role="menuitem" to="/admin" onClick={() => setProfileOpen(false)}><MenuIcon name="admin" /><span>Admin dashboard</span></Link><Link role="menuitem" to="/inventory" onClick={() => setProfileOpen(false)}><MenuIcon name="admin" /><span>Products &amp; inventory</span></Link></>}
+              <button className="profile-signout" type="button" role="menuitem" onClick={handleLogout}><span aria-hidden="true">↪</span><span>Sign Out</span></button>
             </div>}
           </div> : <>
             <Link to="/login">Login</Link>

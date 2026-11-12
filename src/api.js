@@ -94,6 +94,9 @@ export const productsAPI = {
   deleteBanner: (id) => api.delete(`/products/banners/${id}/`),
   getStoreSettings: () => api.get('/products/store-settings/'),
   saveStoreSettings: (id, data) => id ? api.patch(`/products/store-settings/${id}/`, data, { headers: { 'Content-Type': 'multipart/form-data' } }) : api.post('/products/store-settings/', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  getWishlist: () => api.get('/products/wishlist/'),
+  addToWishlist: (product_id) => api.post('/products/wishlist/', { product_id }),
+  removeFromWishlist: (id) => api.delete(`/products/wishlist/${id}/`),
 };
 
 export const cartAPI = {

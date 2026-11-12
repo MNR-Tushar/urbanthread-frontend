@@ -15,6 +15,8 @@ import { ReviewsPage } from './pages/ReviewsPage';
 import { InventoryPage } from './pages/InventoryPage';
 import { PaymentResultPage } from './pages/PaymentResultPage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { OrderTrackingPage } from './pages/OrderTrackingPage';
+import { WishlistPage } from './pages/WishlistPage';
 
 function AppWithAuth() {
   const { isAuthenticated, loading } = useAuth();
@@ -30,6 +32,8 @@ function AppWithAuth() {
         <Route path="/login" element={loading ? <div className="loading">Loading...</div> : !isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />} />
         <Route path="/register" element={loading ? <div className="loading">Loading...</div> : !isAuthenticated ? <RegisterPage /> : <Navigate to="/" replace />} />
         <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
+        <Route path="/orders/:orderId/track" element={<ProtectedRoute><OrderTrackingPage /></ProtectedRoute>} />
+        <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
         <Route path="/payments" element={<ProtectedRoute><PaymentsPage /></ProtectedRoute>} />
         <Route path="/payment/success" element={<ProtectedRoute><PaymentResultPage outcome="success" /></ProtectedRoute>} />

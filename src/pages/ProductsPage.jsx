@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { productsAPI } from '../api';
 import { Loading } from '../components/common';
+import { useAuth } from '../contexts/useAuth';
 
 const asList = (data) => Array.isArray(data) ? data : data?.results || [];
 const priceOf = (product) => Number(product.discount_price) > 0 ? Number(product.discount_price) : Number(product.price || 0);
@@ -10,12 +11,15 @@ const taka = (value) => `৳${Number(value || 0).toLocaleString('en-BD')}`;
 export const ProductsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const isHome = location.pathname === '/';
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [banners, setBanners] = useState([]);
   const [bannerIndex, setBannerIndex] = useState(0);
+  const [wishlistItems, setWishlistItems] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -45,6 +49,29 @@ export const ProductsPage = () => {
   }, [banners.length]);
 
   useEffect(() => setSearchQuery(searchParams.get('search') || ''), [searchParams]);
+
+  useEffect(() => {
+    if (!isAuthenticated) { setWishlistItems({}); return undefined; }
+    let active = true;
+    productsAPI.getWishlist().then(({ data }) => {
+      const list = asList(data);
+      if (active) setWishlistItems(Object.fromEntries(list.map((item) => [item.product.id, item.id])));
+    }).catch(() => { if (active) setWishlistItems({}); });
+    return () => { active = false; };
+  }, [isAuthenticated]);
+
+  const toggleWishlist = async (product) => {
+    if (!isAuthenticated) { navigate('/login', { state: { from: location.pathname } }); return; }
+    try {
+      if (wishlistItems[product.id]) {
+        await productsAPI.removeFromWishlist(wishlistItems[product.id]);
+        setWishlistItems((current) => { const next = { ...current }; delete next[product.id]; return next; });
+      } else {
+        const { data } = await productsAPI.addToWishlist(product.id);
+        setWishlistItems((current) => ({ ...current, [product.id]: data.id }));
+      }
+    } catch { setError('Could not update your wishlist. Please try again.'); }
+  };
 
   const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase();
@@ -118,6 +145,7 @@ export const ProductsPage = () => {
                 {discounted && <span className="product-badge">SPECIAL PRICE</span>}
                 <span className="product-card-arrow" aria-hidden="true">↗</span>
               </Link>
+              <button type="button" className={`wishlist-toggle ${wishlistItems[product.id] ? 'saved' : ''}`} aria-label={wishlistItems[product.id] ? `Remove ${product.product_name} from wishlist` : `Add ${product.product_name} to wishlist`} aria-pressed={Boolean(wishlistItems[product.id])} onClick={() => toggleWishlist(product)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" /></svg></button>
               <div className="product-card-content">
                 <div className="product-card-overline"><span>{product.category?.category_name || 'EVERYDAY ESSENTIALS'}</span><span>UT. {String(product.id).padStart(3, '0')}</span></div>
                 <Link className="product-title-link" to={`/product/${product.slug}`}><h3>{product.product_name}</h3></Link>
