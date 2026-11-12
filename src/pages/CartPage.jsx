@@ -24,12 +24,12 @@ export const CartPage = () => {
   };
 
   useEffect(() => {
-    Promise.all([cartAPI.getCart(), authAPI.getAddresses(), productsAPI.getStoreSettings()])
+    Promise.all([cartAPI.getCart(), authAPI.getAddresses(), productsAPI.getStoreSettings().catch(() => null)])
       .then(([cartRes, addressRes, settingsRes]) => {
         setCart(cartRes.data);
         const list = asList(addressRes.data);
         setAddresses(list);
-        const config = asList(settingsRes.data)[0];
+        const config = settingsRes ? asList(settingsRes.data)[0] : null;
         if (config) setDeliveryRates({ dhaka_delivery_fee: Number(config.dhaka_delivery_fee), outside_delivery_fee: Number(config.outside_delivery_fee) });
         if (list.length) setAddressId(String(list[0].id));
       })
