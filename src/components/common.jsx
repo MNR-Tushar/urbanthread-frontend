@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
+import { productsAPI } from '../api';
 
 export const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -31,10 +32,10 @@ export const Navbar = () => {
   };
   return (
     <>
-    <div className="announcement-bar"><span>THE EVERYDAY EDIT</span><i /> Thoughtful style, delivered to your door <span className="announcement-right">Free delivery on orders over ৳2,500</span></div>
+    <div className="announcement-bar"><span>THE EVERYDAY EDIT</span><i /> Thoughtful style, delivered to your door <span className="announcement-right">Free delivery on orders over &#2547;2,500</span></div>
     <nav className="navbar">
       <div className="navbar-container">
-        <Link to="/" className="navbar-brand">urban<span>thread</span><b>®</b></Link>
+        <Link to="/" className="navbar-brand">urban<span>thread</span><b>Â®</b></Link>
         <form className="nav-search" onSubmit={(event) => { event.preventDefault(); navigate(`/products${searchText.trim() ? `?search=${encodeURIComponent(searchText.trim())}` : ''}`); }}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
           <input value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search the collection" aria-label="Search products" />
@@ -74,15 +75,29 @@ export const Navbar = () => {
   );
 };
 
-export const StoreFooter = () => (
-  <footer className="store-footer">
-    <Link to="/" className="footer-brand">UrbanThread<span>®</span></Link>
-    <p>Everyday style, thoughtfully chosen.</p>
-    <div><Link to="/products">Shop</Link><Link to="/orders">Orders</Link><Link to="/profile">Your account</Link><Link to="/reviews">Reviews</Link></div>
-    <small>© {new Date().getFullYear()} UrbanThread. Made for everyday.</small>
-  </footer>
-);
-
+export const StoreFooter = () => {
+  const [socialLinks, setSocialLinks] = useState({});
+  useEffect(() => {
+    productsAPI.getStoreSettings().then(({ data }) => {
+      const settings = Array.isArray(data) ? data[0] : data?.results?.[0];
+      if (settings) setSocialLinks(settings);
+    }).catch(() => {});
+  }, []);
+  const networks = [
+    ['Facebook', socialLinks.social_facebook, <path key="f" d="M13.4 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.7V3.6c-.3 0-1.3-.1-2.4-.1-2.4 0-4 1.5-4 4.2v2.3H7.6v3.1h2.7v8h3.1Z" />],
+    ['Instagram', socialLinks.social_instagram, <><rect key="box" x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="2" /><circle key="lens" cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="2" /><circle key="dot" cx="18" cy="6" r="1.2" /></>],
+    ['YouTube', socialLinks.social_youtube, <path key="yt" d="M21.6 7.2a2.7 2.7 0 0 0-1.9-1.9C18 4.8 12 4.8 12 4.8s-6 0-7.7.5a2.7 2.7 0 0 0-1.9 1.9A28 28 0 0 0 2 12a28 28 0 0 0 .4 4.8 2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 0 0 1.9-1.9A28 28 0 0 0 22 12a28 28 0 0 0-.4-4.8ZM10 15.2V8.8l5.5 3.2-5.5 3.2Z" />],
+  ];
+  return (
+    <footer className="store-footer">
+      <Link to="/" className="footer-brand">{socialLinks.store_name || 'UrbanThread'}<span>®</span></Link>
+      <p>Everyday style, thoughtfully chosen.</p>
+      <div><Link to="/products">Shop</Link><Link to="/orders">Orders</Link><Link to="/profile">Your account</Link><Link to="/reviews">Reviews</Link></div>
+      <nav className="footer-social-links" aria-label="Social media">{networks.map(([name, url, icon]) => url ? <a key={name} href={url} target="_blank" rel="noreferrer" aria-label={name} title={name}><svg viewBox="0 0 24 24" aria-hidden="true">{icon}</svg></a> : <span key={name} className="footer-social-disabled" aria-label={`${name} link not configured`} title={`${name} link not configured`}><svg viewBox="0 0 24 24" aria-hidden="true">{icon}</svg></span>)}</nav>
+      <small>© {new Date().getFullYear()} {socialLinks.store_name || 'UrbanThread'}. Made for everyday.</small>
+    </footer>
+  );
+};
 export const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
 
