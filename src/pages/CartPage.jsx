@@ -140,7 +140,7 @@ export const CartPage = () => {
             {addresses.length ? <div className="checkout-field">
               <label htmlFor="delivery-address">Delivery address</label>
               <select id="delivery-address" value={addressId} onChange={(event) => setAddressId(event.target.value)}>
-                {addresses.map((address) => <option key={address.id} value={address.id}>{address.full_name} · {address.city}, {address.state}</option>)}
+                {addresses.map((address) => <option key={address.id} value={address.id}>{[address.address, address.city, address.state, address.pincode].filter(Boolean).join(', ')}</option>)}
               </select>
             </div> : <p className="address-needed">No saved address. <Link to="/profile">Add one in your profile</Link>.</p>}
             <div className="checkout-field">

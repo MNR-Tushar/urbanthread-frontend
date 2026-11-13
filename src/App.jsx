@@ -17,6 +17,7 @@ import { PaymentResultPage } from './pages/PaymentResultPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { OrderTrackingPage } from './pages/OrderTrackingPage';
 import { WishlistPage } from './pages/WishlistPage';
+import { AdminCustomerProfilePage } from './pages/AdminCustomerProfilePage';
 
 function AppWithAuth() {
   const { isAuthenticated, loading } = useAuth();
@@ -44,6 +45,7 @@ function AppWithAuth() {
         <Route path="/reviews/:productId" element={<ReviewsPage />} />
         <Route path="/inventory" element={<AdminRoute><InventoryPage /></AdminRoute>} />
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/customers/:customerId" element={<AdminRoute><AdminCustomerProfilePage /></AdminRoute>} />
       </Routes>
       <StoreFooter />
     </Router>
