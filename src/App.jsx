@@ -45,7 +45,7 @@ function AppWithAuth() {
         <Route path="/reviews/:productId" element={<ReviewsPage />} />
         <Route path="/inventory" element={<AdminRoute><InventoryPage /></AdminRoute>} />
         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-        <Route path="/admin/customers/:customerId" element={<AdminRoute><AdminCustomerProfilePage /></AdminRoute>} />
+        <Route path="/admin/customers/:customerUsername" element={<AdminRoute><AdminCustomerProfilePage /></AdminRoute>} />
       </Routes>
       <StoreFooter />
     </Router>

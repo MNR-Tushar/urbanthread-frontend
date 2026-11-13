@@ -1,5 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
-import { authAPI } from '../api';
+import { authAPI, ordersAPI } from '../api';
+import { Link } from 'react-router-dom';
 import { Loading } from '../components/common';
 
 const emptyAddress = { full_name: '', phone: '', address: '', city: '', state: '', pincode: '' };
@@ -8,6 +9,7 @@ const listData = (data) => data?.results || data || [];
 export const ProfilePage = () => {
   const [user, setUser] = useState(null);
   const [addresses, setAddresses] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [customerProfile, setCustomerProfile] = useState(null);
   const [profileForm, setProfileForm] = useState({ phone: '', gender: '', date_of_birth: '' });
   const [profileImage, setProfileImage] = useState(null);
@@ -30,11 +32,12 @@ export const ProfilePage = () => {
   };
 
   useEffect(() => {
-    Promise.all([authAPI.getUser(), authAPI.getAddresses(), authAPI.getProfiles()])
-      .then(([userRes, addressRes, profileRes]) => {
+    Promise.all([authAPI.getUser(), authAPI.getAddresses(), authAPI.getProfiles(), ordersAPI.getOrders()])
+      .then(([userRes, addressRes, profileRes, ordersRes]) => {
         setUser(userRes.data);
         setForm({ username: userRes.data.username || '', first_name: userRes.data.first_name || '', last_name: userRes.data.last_name || '', phone: userRes.data.phone || '', address: userRes.data.address || '' });
         setAddresses(listData(addressRes.data));
+        setOrders(listData(ordersRes.data));
         const currentProfile = listData(profileRes.data).find((item) => Number(item.user) === Number(userRes.data.id)) || null;
         setCustomerProfile(currentProfile);
         setProfileForm({ phone: currentProfile?.phone || '', gender: currentProfile?.gender || '', date_of_birth: currentProfile?.date_of_birth || '' });
@@ -106,6 +109,10 @@ export const ProfilePage = () => {
   };
 
   if (loading) return <Loading />;
+  const recentDeliveredOrders = orders
+    .filter((order) => ['delivered', 'completed'].includes(String(order.order_status || '').toLowerCase()))
+    .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+    .slice(0, 5);
 
   return (
     <main className="page profile-page">
@@ -137,6 +144,11 @@ export const ProfilePage = () => {
           {editingAddressId === address.id ? <form className="address-form" onSubmit={saveEditedAddress}><div className="address-fields">{[['full_name', 'Full name'], ['phone', 'Phone'], ['address', 'Street address'], ['city', 'City'], ['state', 'District / State'], ['pincode', 'Postal code']].map(([key, label]) => <div className="form-group" key={key}><label>{label}</label><input value={addressEditForm[key]} onChange={(event) => setAddressEditForm({ ...addressEditForm, [key]: event.target.value })} required /></div>)}</div><div className="profile-edit-actions"><button className="btn-submit" disabled={saving}>{saving ? 'Saving...' : 'Save address'}</button><button type="button" className="admin-quiet-button" onClick={() => setEditingAddressId(null)}>Cancel</button></div></form> : <><strong>{address.full_name}</strong><br />{address.address}, {address.city}, {address.state} {address.pincode}<br />Phone: {address.phone}<div className="address-actions"><button type="button" className="admin-quiet-button" onClick={() => editAddress(address)}>Edit</button><button type="button" className="btn-address-delete" onClick={() => deleteAddress(address.id)}>Remove</button></div></>}
         </li>)}</ul> : <p>No saved addresses yet. Add one to place an order.</p>}
         {addingAddress && <form onSubmit={saveAddress} className="address-form"><h3>Add a delivery address</h3><div className="address-fields">{[['full_name', 'Full name'], ['phone', 'Phone'], ['address', 'Street address'], ['city', 'City'], ['state', 'District / State'], ['pincode', 'Postal code']].map(([key, label]) => <div className="form-group" key={key}><label htmlFor={`address-${key}`}>{label}</label><input id={`address-${key}`} value={newAddress[key]} onChange={(event) => setNewAddress({ ...newAddress, [key]: event.target.value })} required /></div>)}</div><div className="profile-edit-actions"><button className="btn-submit" disabled={saving}>{saving ? 'Saving...' : 'Add address'}</button><button type="button" className="admin-quiet-button" onClick={() => { setAddingAddress(false); setNewAddress(emptyAddress); }}>Cancel</button></div></form>}
-      </section>    </main>
+      </section>
+      <section className="profile-info profile-order-history">
+        <div className="profile-section-heading"><div><h2>Recent Orders</h2><p>Your delivered orders.</p></div></div>
+        {recentDeliveredOrders.length ? <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Order #</th><th>Placed On</th><th>Items</th><th>Total</th></tr></thead><tbody>{recentDeliveredOrders.map((order) => { const itemCount = (order.items || []).reduce((count, item) => count + Number(item.quantity || 0), 0); return <tr key={order.id}><td><Link to={`/orders/${order.id}/track`}>{order.order_number}</Link></td><td>{order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB', { timeZone: 'Asia/Dhaka' }) : '—'}</td><td><div className="profile-order-items">{(order.items || []).map((item) => <span key={item.id} title={`${item.product?.product_name || 'Product'} × ${item.quantity}`}>{item.product?.images?.[0]?.image ? <img src={item.product.images[0].image} alt={item.product?.product_name || 'Product'} /> : <span className="profile-order-item-placeholder" aria-hidden="true" />}<small>{item.product?.product_name || 'Product'} × {item.quantity}</small></span>)}{!order.items?.length && <small>{itemCount} {itemCount === 1 ? 'item' : 'items'}</small>}</div></td><td>৳{Number(order.total_amount || 0).toLocaleString('en-BD')}</td></tr>; })}</tbody></table></div> : <p>No delivered orders yet.</p>}
+      </section>
+    </main>
   );
 };

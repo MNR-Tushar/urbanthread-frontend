@@ -7,7 +7,7 @@ const unwrap = (data) => Array.isArray(data) ? data : data?.results || [];
 const money = (value) => `৳${Number(value || 0).toLocaleString('en-BD')}`;
 
 export const AdminCustomerProfilePage = () => {
-  const { customerId } = useParams();
+  const { customerUsername } = useParams();
   const location = useLocation();
   const returnTab = location.state?.adminTab || 'customers';
   const [customer, setCustomer] = useState(null);
@@ -20,19 +20,19 @@ export const AdminCustomerProfilePage = () => {
   useEffect(() => {
     Promise.all([authAPI.getUsers(), authAPI.getProfiles(), authAPI.getAddresses(), ordersAPI.getAdminOrders()])
       .then(([usersRes, profilesRes, addressesRes, ordersRes]) => {
-        const selected = unwrap(usersRes.data).find((user) => Number(user.id) === Number(customerId));
+        const selected = unwrap(usersRes.data).find((user) => user.username === customerUsername || String(user.id) === customerUsername);
         if (!selected || selected.is_staff || selected.is_superuser) {
           setError('Customer profile not found.');
           return;
         }
         setCustomer(selected);
-        setProfile(unwrap(profilesRes.data).find((item) => Number(item.user) === Number(customerId)) || null);
-        setAddresses(unwrap(addressesRes.data).filter((item) => Number(item.user) === Number(customerId)));
-        setOrders(unwrap(ordersRes.data).filter((item) => Number(item.user?.id) === Number(customerId)));
+        setProfile(unwrap(profilesRes.data).find((item) => Number(item.user) === Number(selected.id)) || null);
+        setAddresses(unwrap(addressesRes.data).filter((item) => Number(item.user) === Number(selected.id)));
+        setOrders(unwrap(ordersRes.data).filter((item) => Number(item.user?.id) === Number(selected.id)));
       })
       .catch((err) => setError(err.response?.data?.detail || 'Could not load customer profile.'))
       .finally(() => setLoading(false));
-  }, [customerId]);
+  }, [customerUsername]);
 
   if (loading) return <Loading />;
   const displayName = customer ? [customer.first_name, customer.last_name].filter(Boolean).join(' ') || customer.username : 'Customer';
