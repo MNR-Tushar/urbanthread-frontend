@@ -55,7 +55,7 @@ export const AdminCustomerProfilePage = () => {
         {addresses.length ? <div className="admin-entity-list">{addresses.map((address) => <div key={address.id}><span><strong>{address.full_name}</strong><small>{address.phone}</small></span><span>{[address.address, address.city, address.state, address.pincode].filter(Boolean).join(', ')}</span></div>)}</div> : <p>No saved addresses.</p>}
       </section>
       <section className="admin-panel"><div className="admin-panel-heading"><div><span className="admin-step">PURCHASES</span><h2>Orders ({orders.length})</h2></div></div>
-        {orders.length ? <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Order</th><th>Date</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id}><td>{order.order_number}</td><td>{order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB') : '—'}</td><td>{money(order.total_amount)}</td><td>{order.payment_status || '—'}</td><td>{order.order_status || '—'}</td></tr>)}</tbody></table></div> : <p>No orders yet.</p>}
+        {orders.length ? <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Order</th><th>Date</th><th>Total</th><th>Payment</th><th>Status</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id}><td><Link to={`/admin/orders/${order.id}`}>{order.order_number}</Link></td><td>{order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB') : '—'}</td><td>{money(order.total_amount)}</td><td>{order.payment_status || '—'}</td><td>{order.order_status || '—'}</td></tr>)}</tbody></table></div> : <p>No orders yet.</p>}
       </section>
     </>}
   </main>;

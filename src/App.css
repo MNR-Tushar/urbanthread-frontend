@@ -812,6 +812,9 @@ html { font-size: 17px; }
 .tracking-history time { color: #90968c; font-size: .72rem; }
 .tracking-order-items > div { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); }
 .tracking-order-items small { display: block; margin-top: 4px; color: #777d73; }
+.tracking-product > a { display: flex; align-items: center; gap: 9px; color: inherit; text-decoration: none; }
+.tracking-product > a:hover { color: #536b4d; text-decoration: underline; }
+.tracking-product img { width: 42px; height: 48px; border: 1px solid var(--line); border-radius: 3px; object-fit: cover; }
 .order-tracking-cancelled { border-color: #f1c7c3; background: #fff5f3; color: #943e38; }
 .order-tracking-cancelled p { margin-bottom: 0; }
 @media (max-width: 650px) { .order-tracking-columns { grid-template-columns: 1fr; } .order-tracking-card { padding: 17px; } .order-tracking-steps li { font-size: .65rem; } .tracking-current-status { align-items: flex-start; flex-direction: column; } .tracking-current-status span { margin-left: 0; } }

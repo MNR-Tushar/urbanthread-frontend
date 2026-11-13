@@ -34,7 +34,7 @@ export const PaymentResultPage = ({ outcome }) => {
         <h1>{copy.title}</h1>
         <p>{copy.message}</p>
         {payment && <div className="payment-result-details">
-          <p>Order: <strong>{payment.order?.order_number}</strong></p>
+          <p>Order: <strong>{payment.order?.id ? <Link to={`/orders/${payment.order.id}/track`}>{payment.order.order_number}</Link> : payment.order?.order_number}</strong></p>
           <p>Payment status: <strong>{payment.status_display || payment.status}</strong></p>
           <p>Amount: <strong>৳{payment.amount}</strong></p>
         </div>}

@@ -122,7 +122,7 @@ export const PaymentsPage = () => {
           <section className="payment-history">
             <h2>Payment history</h2>
             {payments.length ? <Paginated items={payments} pageSize={8} label="payments">{(pagePayments) => pagePayments.map((payment) => <article className="payment-history-item" key={payment.id}>
-              <div><strong>{payment.order?.order_number || payment.transaction_id}</strong><p>{payment.payment_method_display || payment.payment_method}</p></div>
+              <div><strong>{payment.order?.id ? <Link to={`/orders/${payment.order.id}/track`}>{payment.order.order_number}</Link> : payment.transaction_id}</strong><p>{payment.payment_method_display || payment.payment_method}</p></div>
               <div><strong>৳{payment.amount}</strong><span className={`status ${payment.status}`}>{payment.status_display || payment.status}</span></div>
               <div className="payment-actions">
                 {payment.status !== 'completed' && <button type="button" className="btn-secondary" onClick={() => { setOrderNumber(payment.order?.order_number || ''); setPaymentMethod(payment.payment_method === 'sslcommerz' ? 'sslcommerz' : 'cash_on_delivery'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>Continue payment</button>}

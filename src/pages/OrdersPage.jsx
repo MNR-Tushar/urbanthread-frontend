@@ -72,7 +72,7 @@ export const OrdersPage = () => {
               {pageOrders.map((order) => (
                 <div key={order.id} className="order-card">
                   <div className="order-header">
-                    <h3>Order #{order.order_number}</h3>
+                    <h3>Order <Link to={`/orders/${order.id}/track`}>#{order.order_number}</Link></h3>
                     <span className={`status ${order.order_status}`}>{order.order_status}</span>
                   </div>
                   <p>Total: ৳{order.total_amount}</p>
