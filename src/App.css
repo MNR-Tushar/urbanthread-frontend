@@ -119,6 +119,19 @@ h2 { font-size: clamp(1.45rem, 2.5vw, 2rem); }
 .app-error-boundary { display: grid; min-height: 55vh; place-items: center; text-align: center; }
 .app-error-boundary section { max-width: 520px; padding: 36px; border: 1px solid var(--line); background: #fffefa; }
 .app-error-boundary .btn-submit { margin-top: 18px; cursor: pointer; }
+.forgot-password-link { margin: -7px 0 16px; text-align: right; font-size: .85rem; }
+.forgot-password-link a, .password-back-link a { color: var(--green); font-weight: 700; }
+.password-flow-copy { margin: 12px 0 22px; color: var(--muted); }
+.password-channel-options { display: flex; gap: 18px; margin: 0 0 17px; }
+.password-channel-options label { display: flex; align-items: center; gap: 7px; }
+.password-channel-options input { accent-color: var(--green); }
+.password-flow .btn-submit { width: 100%; margin-top: 10px; }
+.password-resend { display: block; margin: 16px auto 0; padding: 5px 8px; border: 0; background: transparent; color: var(--green); font-weight: 700; cursor: pointer; }
+.password-back-link { margin-top: 20px; text-align: center; }
+.password-signin { display: inline-flex; width: auto !important; text-decoration: none; }
+.password-change-section { grid-column: 1 / -1; }
+.password-change-section .profile-form { max-width: 580px; }
+.password-change-section .btn-submit { margin-top: 8px; }
 @keyframes skeleton-shimmer { to { background-position-x: -150%; } }
 @media (max-width: 700px) { .skeleton-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
 @media (prefers-reduced-motion: reduce) { .skeleton-heading i, .skeleton-card > i, .skeleton-card > span, .skeleton-card > b { animation: none; } }

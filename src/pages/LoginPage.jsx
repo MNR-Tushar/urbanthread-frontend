@@ -38,6 +38,7 @@ export const LoginPage = () => {
             <label>Password</label>
             <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password" required />
           </div>
+          <p className="forgot-password-link"><Link to="/forgot-password">Forgot password?</Link></p>
           <button type="submit" className="btn-submit" disabled={loading}>
             {loading ? 'Signing in...' : 'Sign In'}
           </button>

@@ -19,6 +19,7 @@ import { OrderTrackingPage } from './pages/OrderTrackingPage';
 import { WishlistPage } from './pages/WishlistPage';
 import { AdminCustomerProfilePage } from './pages/AdminCustomerProfilePage';
 import { ReturnsPage } from './pages/ReturnsPage';
+import { ChangePasswordForm, PasswordResetPage } from './pages/PasswordSecurityPage';
 
 function AppWithAuth() {
   const { isAuthenticated, loading } = useAuth();
@@ -32,6 +33,7 @@ function AppWithAuth() {
         <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={loading ? <Loading /> : !isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />} />
+        <Route path="/forgot-password" element={<PasswordResetPage />} />
         <Route path="/register" element={loading ? <Loading /> : !isAuthenticated ? <RegisterPage /> : <Navigate to="/" replace />} />
         <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
         <Route path="/returns" element={<ReturnsPage />} />

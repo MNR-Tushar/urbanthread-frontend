@@ -2,6 +2,7 @@
 import { authAPI, ordersAPI } from '../api';
 import { Link } from 'react-router-dom';
 import { Loading } from '../components/common';
+import { ChangePasswordForm } from './PasswordSecurityPage';
 
 const emptyAddress = { full_name: '', phone: '', address: '', city: '', state: '', pincode: '' };
 const listData = (data) => data?.results || data || [];
@@ -138,6 +139,7 @@ export const ProfilePage = () => {
           <div className="profile-edit-actions"><button className="btn-submit" disabled={saving}>{saving ? 'Saving...' : 'Save account'}</button><button type="button" className="admin-quiet-button" onClick={() => { setEditingAccount(false); setForm({ username: user?.username || '', first_name: user?.first_name || '', last_name: user?.last_name || '', phone: user?.phone || '', address: user?.address || '' }); }}>Cancel</button></div>
         </form> : <div className="profile-readonly"><p><strong>Email:</strong> {user?.email}</p><p><strong>Username:</strong> {user?.username}</p><p><strong>Name:</strong> {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Not added'}</p><p><strong>Phone:</strong> {user?.phone || 'Not added'}</p><p><strong>Account type:</strong> {user?.is_staff ? 'Administrator' : 'Customer'}</p></div>}
       </section>
+      <ChangePasswordForm />
       <section className="addresses">
         <div className="profile-section-heading"><div><h2>Delivery addresses</h2><p>Manage the addresses used at checkout.</p></div><button type="button" className="admin-quiet-button" onClick={() => { setAddingAddress((current) => !current); setEditingAddressId(null); }}>{addingAddress ? 'Cancel' : 'Add address'}</button></div>
         {addresses.length ? <ul>{addresses.map((address) => <li key={address.id}>
