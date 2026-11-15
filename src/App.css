@@ -104,6 +104,24 @@ h2 { font-size: clamp(1.45rem, 2.5vw, 2rem); }
 .success { border: 1px solid #c9dfc9; background: #edf7ed; color: #315c38; }
 .loading { display: grid; min-height: 55vh; place-items: center; color: var(--muted); font-weight: 700; }
 .loading::before { width: 28px; height: 28px; margin-right: 10px; border: 3px solid #dce3dc; border-top-color: var(--green); border-radius: 50%; content: ''; animation: spin .8s linear infinite; }
+.skeleton-screen { min-height: 60vh; }
+.skeleton-heading { display: grid; gap: 11px; width: min(440px, 75%); margin: 12px 0 34px; }
+.skeleton-heading i, .skeleton-card > i, .skeleton-card > span, .skeleton-card > b { display: block; border-radius: 5px; background: linear-gradient(100deg, #e9ebe4 25%, #f5f6f1 42%, #e9ebe4 60%); background-size: 300% 100%; animation: skeleton-shimmer 1.35s ease-in-out infinite; }
+.skeleton-heading i:first-child { width: 30%; height: 10px; }
+.skeleton-heading i:nth-child(2) { width: 76%; height: 30px; }
+.skeleton-heading i:last-child { width: 54%; height: 13px; }
+.skeleton-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.skeleton-card { display: grid; gap: 12px; }
+.skeleton-card > i { width: 100%; aspect-ratio: .86; border-radius: 4px; }
+.skeleton-card > span { width: 70%; height: 12px; }
+.skeleton-card > span:nth-of-type(2) { width: 48%; }
+.skeleton-card > b { width: 28%; height: 16px; }
+.app-error-boundary { display: grid; min-height: 55vh; place-items: center; text-align: center; }
+.app-error-boundary section { max-width: 520px; padding: 36px; border: 1px solid var(--line); background: #fffefa; }
+.app-error-boundary .btn-submit { margin-top: 18px; cursor: pointer; }
+@keyframes skeleton-shimmer { to { background-position-x: -150%; } }
+@media (max-width: 700px) { .skeleton-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
+@media (prefers-reduced-motion: reduce) { .skeleton-heading i, .skeleton-card > i, .skeleton-card > span, .skeleton-card > b { animation: none; } }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .empty-cart, .empty-orders { padding: 40px 24px; border: 1px dashed #cdd4ca; border-radius: var(--radius); background: rgba(255,255,255,.65); color: var(--muted); text-align: center; }

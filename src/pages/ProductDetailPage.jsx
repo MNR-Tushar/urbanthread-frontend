@@ -4,6 +4,7 @@ import { cartAPI, inventoryAPI, productsAPI, reviewsAPI } from '../api';
 import { useAuth } from '../contexts/useAuth';
 import { Loading } from '../components/common';
 import { Paginated } from '../components/Paginated';
+import { ResponsiveImage } from '../components/ResponsiveImage';
 
 export const ProductDetailPage = () => {
   const { slug } = useParams();
@@ -156,7 +157,7 @@ export const ProductDetailPage = () => {
     <main className="page product-detail-page">
       <div className="product-gallery">
         <div className="product-gallery-main">
-          {productImages.length ? <img src={productImages[imageIndex]?.image} alt={`${product.product_name} image ${imageIndex + 1}`} className="product-img" />
+          {productImages.length ? <ResponsiveImage image={productImages[imageIndex]} alt={`${product.product_name} image ${imageIndex + 1}`} className="product-img" loading="eager" sizes="(max-width: 800px) 100vw, 55vw" />
             : <div className="product-img product-image-placeholder">No image available</div>}
           {productImages.length > 1 && <>
             <button type="button" className="product-gallery-arrow previous" onClick={showPreviousImage} aria-label="Previous product image">
@@ -170,7 +171,7 @@ export const ProductDetailPage = () => {
         </div>
         {productImages.length > 1 && <div className="product-gallery-thumbnails" aria-label="Product images">
           {productImages.slice(0, 5).map((image, index) => <button key={image.id} type="button" className={index === imageIndex ? 'active' : ''} onClick={() => setImageIndex(index)} aria-label={`Show image ${index + 1}`} aria-current={index === imageIndex ? 'true' : undefined}>
-            <img src={image.image} alt="" />
+            <ResponsiveImage image={image} alt="" sizes="96px" />
           </button>)}
         </div>}
       </div>
@@ -258,5 +259,5 @@ export const ProductDetailPage = () => {
 };
 
 function ProductRecommendations({ title, products }) {
-  return <section className="collection-section product-recommendations"><div className="collection-heading"><div><p className="section-kicker">URBANTHREAD EDIT</p><h2>{title}</h2></div></div><div className="product-grid">{products.map((item) => <article className="product-card" key={item.id}><Link className="product-image-link" to={`/product/${item.slug}`}>{item.images?.[0]?.image ? <img className="product-img" src={item.images[0].image} alt={item.product_name} loading="lazy" /> : <div className="product-img product-image-placeholder">UrbanThread</div>}</Link><div className="product-card-content"><Link className="product-title-link" to={`/product/${item.slug}`}><h3>{item.product_name}</h3></Link><strong>৳{item.current_price ?? item.price}</strong></div></article>)}</div></section>;
+  return <section className="collection-section product-recommendations"><div className="collection-heading"><div><p className="section-kicker">URBANTHREAD EDIT</p><h2>{title}</h2></div></div><div className="product-grid">{products.map((item) => <article className="product-card" key={item.id}><Link className="product-image-link" to={`/product/${item.slug}`}>{item.images?.[0]?.image ? <ResponsiveImage className="product-img" image={item.images[0]} alt={item.product_name} /> : <div className="product-img product-image-placeholder">UrbanThread</div>}</Link><div className="product-card-content"><Link className="product-title-link" to={`/product/${item.slug}`}><h3>{item.product_name}</h3></Link><strong>৳{item.current_price ?? item.price}</strong></div></article>)}</div></section>;
 }

@@ -4,6 +4,7 @@ import { getAllPages, productsAPI } from '../api';
 import { Loading } from '../components/common';
 import { useAuth } from '../contexts/useAuth';
 import { Paginated } from '../components/Paginated';
+import { ResponsiveImage } from '../components/ResponsiveImage';
 
 const asList = (data) => Array.isArray(data) ? data : data?.results || [];
 const priceOf = (product) => Number(product.current_price ?? product.discount_price) > 0 ? Number(product.current_price ?? product.discount_price) : Number(product.price || 0);
@@ -140,7 +141,7 @@ export const ProductsPage = () => {
             const discounted = priceOf(product) < Number(product.price);
             return <article key={product.id} className="product-card">
               <Link className="product-image-link" to={`/product/${product.slug}`} aria-label={`View ${product.product_name}`}>
-                {image ? <img src={image} alt={product.product_name} className="product-img" loading={index > 3 ? 'lazy' : 'eager'} /> : <div className="product-img product-image-placeholder">UrbanThread</div>}
+                {image ? <ResponsiveImage image={product.images[0]} alt={product.product_name} className="product-img" loading={index > 3 ? 'lazy' : 'eager'} /> : <div className="product-img product-image-placeholder">UrbanThread</div>}
                 {discounted && <span className="product-badge">SALE</span>}
                 <span className="product-card-arrow" aria-hidden="true">↗</span>
               </Link>
@@ -155,7 +156,7 @@ export const ProductsPage = () => {
         </div>}</Paginated>
       </section>
 
-      {isHome && <div className="home-product-sections">{[['featured', 'Featured picks'], ['new_arrivals', 'New arrivals'], ['best_sellers', 'Best sellers']].map(([key, title]) => homeSections[key]?.length > 0 && <section className="collection-section home-product-section" key={key}><div className="collection-heading"><div><p className="section-kicker">URBANTHREAD EDIT</p><h2>{title}</h2></div></div><div className="product-grid">{homeSections[key].slice(0, 4).map((product) => <article className="product-card" key={product.id}><Link className="product-image-link" to={`/product/${product.slug}`}>{product.images?.[0]?.image ? <img src={product.images[0].image} alt={product.product_name} className="product-img" loading="lazy" /> : <div className="product-img product-image-placeholder">UrbanThread</div>}</Link><div className="product-card-content"><span>{product.category?.category_name}</span><Link className="product-title-link" to={`/product/${product.slug}`}><h3>{product.product_name}</h3></Link><strong>{taka(priceOf(product))}</strong></div></article>)}</div></section>)}</div>}
+      {isHome && <div className="home-product-sections">{[['featured', 'Featured picks'], ['new_arrivals', 'New arrivals'], ['best_sellers', 'Best sellers']].map(([key, title]) => homeSections[key]?.length > 0 && <section className="collection-section home-product-section" key={key}><div className="collection-heading"><div><p className="section-kicker">URBANTHREAD EDIT</p><h2>{title}</h2></div></div><div className="product-grid">{homeSections[key].slice(0, 4).map((product) => <article className="product-card" key={product.id}><Link className="product-image-link" to={`/product/${product.slug}`}>{product.images?.[0]?.image ? <ResponsiveImage image={product.images[0]} alt={product.product_name} className="product-img" /> : <div className="product-img product-image-placeholder">UrbanThread</div>}</Link><div className="product-card-content"><span>{product.category?.category_name}</span><Link className="product-title-link" to={`/product/${product.slug}`}><h3>{product.product_name}</h3></Link><strong>{taka(priceOf(product))}</strong></div></article>)}</div></section>)}</div>}
       {isHome && <section className="store-promise"><div><span>01</span><strong>Comfort, always</strong><p>Easy-to-wear fits for every day.</p></div><div><span>02</span><strong>Made to last</strong><p>Thoughtful details. Better basics.</p></div><div><span>03</span><strong>Simple delivery</strong><p>Reliable delivery, right to your door.</p></div></section>}
     </main>
   );

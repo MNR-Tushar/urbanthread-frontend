@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/useAuth';
-import { AdminRoute, Navbar, ProtectedRoute, StoreFooter } from './components/common';
+import { AdminRoute, Loading, Navbar, ProtectedRoute, StoreFooter } from './components/common';
 import { ProductsPage } from './pages/ProductsPage';
 import { ProductDetailPage } from './pages/ProductDetailPage';
 import { CartPage } from './pages/CartPage';
@@ -31,8 +31,8 @@ function AppWithAuth() {
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/product/:slug" element={<ProductDetailPage />} />
         <Route path="/cart" element={<CartPage />} />
-        <Route path="/login" element={loading ? <div className="loading">Loading...</div> : !isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />} />
-        <Route path="/register" element={loading ? <div className="loading">Loading...</div> : !isAuthenticated ? <RegisterPage /> : <Navigate to="/" replace />} />
+        <Route path="/login" element={loading ? <Loading /> : !isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />} />
+        <Route path="/register" element={loading ? <Loading /> : !isAuthenticated ? <RegisterPage /> : <Navigate to="/" replace />} />
         <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
         <Route path="/returns" element={<ReturnsPage />} />
         <Route path="/orders/:orderId/track" element={<OrderTrackingPage />} />

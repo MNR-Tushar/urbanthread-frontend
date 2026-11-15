@@ -156,12 +156,16 @@ export const ProtectedRoute = ({ children }) => {
 export const AdminRoute = ({ children }) => {
   const { user, isAuthenticated, loading } = useAuth();
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <Loading />;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (!user?.is_staff && !user?.is_superuser) return <Navigate to="/" replace />;
   return children;
 };
 
 export const Loading = () => (
-  <div className="loading">Loading...</div>
+  <main className="page skeleton-screen" role="status" aria-label="Loading content">
+    <span className="sr-only">Loading content…</span>
+    <div className="skeleton-heading"><i /><i /><i /></div>
+    <div className="skeleton-grid" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <article className="skeleton-card" key={index}><i /><span /><span /><b /></article>)}</div>
+  </main>
 );
