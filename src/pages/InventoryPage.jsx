@@ -5,7 +5,7 @@ import { Loading } from '../components/common';
 import { Paginated } from '../components/Paginated';
 
 const listData = (data) => Array.isArray(data) ? data : data?.results || [];
-const emptyProduct = { product_name: '', sku: '', description: '', price: '', discount_price: '', category_id: '', brand_id: '', is_available: true };
+const emptyProduct = { product_name: '', sku: '', description: '', price: '', discount_price: '', compare_at_price: '', sale_starts_at: '', sale_ends_at: '', is_featured: false, category_id: '', brand_id: '', is_available: true };
 const emptyStock = { product_id: '', color_id: '', size_id: '', quantity: '0' };
 
 export const InventoryPage = () => {
@@ -16,6 +16,9 @@ export const InventoryPage = () => {
   const [colors, setColors] = useState([]);
   const [sizes, setSizes] = useState([]);
   const [banners, setBanners] = useState([]);
+  const [deliveryZones, setDeliveryZones] = useState([]);
+  const [zoneForm, setZoneForm] = useState({ name: '', areas: '', delivery_fee: '100', is_active: true });
+  const [editingZone, setEditingZone] = useState(null);
   const [tab, setTab] = useState('stock');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,8 +38,8 @@ export const InventoryPage = () => {
   const [stockFilters, setStockFilters] = useState({ category: '', brand: '', sort: 'product-asc' });
 
   const loadData = useCallback(async () => {
-    const [inventoryRows, productRows, categoryRows, brandRows, colorResponse, sizeResponse, bannerResponse] = await Promise.all([
-      getAllPages(inventoryAPI.getInventory), getAllPages(productsAPI.getProducts), getAllPages(productsAPI.getCategories), getAllPages(productsAPI.getBrands), productsAPI.getColors(), productsAPI.getSizes(), productsAPI.getBanners(),
+    const [inventoryRows, productRows, categoryRows, brandRows, colorResponse, sizeResponse, bannerResponse, zoneResponse] = await Promise.all([
+      getAllPages(inventoryAPI.getInventory), getAllPages(productsAPI.getProducts), getAllPages(productsAPI.getCategories), getAllPages(productsAPI.getBrands), productsAPI.getColors(), productsAPI.getSizes(), productsAPI.getBanners(), productsAPI.getDeliveryZones(),
     ]);
     setInventory(inventoryRows);
     setProducts(productRows);
@@ -45,6 +48,7 @@ export const InventoryPage = () => {
     setColors(listData(colorResponse.data));
     setSizes(listData(sizeResponse.data));
     setBanners(listData(bannerResponse.data));
+    setDeliveryZones(listData(zoneResponse.data));
   }, []);
 
   useEffect(() => {
@@ -81,14 +85,23 @@ export const InventoryPage = () => {
 
   const saveProduct = async (event) => {
     event.preventDefault();
-    const payload = { ...productForm, sku: productForm.sku.trim() || null, price: Number(productForm.price), discount_price: productForm.discount_price === '' ? 0 : Number(productForm.discount_price), category_id: Number(productForm.category_id), brand_id: Number(productForm.brand_id) };
+    const toIso = (value) => value ? new Date(value).toISOString() : null;
+    const payload = { ...productForm, sku: productForm.sku.trim() || null, price: Number(productForm.price), discount_price: productForm.discount_price === '' ? 0 : Number(productForm.discount_price), compare_at_price: productForm.compare_at_price === '' ? null : Number(productForm.compare_at_price), sale_starts_at: toIso(productForm.sale_starts_at), sale_ends_at: toIso(productForm.sale_ends_at), category_id: Number(productForm.category_id), brand_id: Number(productForm.brand_id) };
     const saved = await runAction(() => editingProduct ? productsAPI.updateProduct(editingProduct, payload) : productsAPI.createProduct(payload), editingProduct ? 'Product details updated.' : 'Product added to the catalog.');
     if (saved) { setProductForm(emptyProduct); setEditingProduct(null); }
   };
 
+  const saveZone = async (event) => {
+    event.preventDefault();
+    const payload = { ...zoneForm, delivery_fee: Number(zoneForm.delivery_fee) };
+    const saved = await runAction(() => editingZone ? productsAPI.updateDeliveryZone(editingZone, payload) : productsAPI.createDeliveryZone(payload), 'Delivery zone saved.');
+    if (saved) { setZoneForm({ name: '', areas: '', delivery_fee: '100', is_active: true }); setEditingZone(null); }
+  };
+
   const editProduct = (product) => {
     setTab('catalog'); setEditingProduct(product.id);
-    setProductForm({ product_name: product.product_name || '', sku: product.sku || '', description: product.description || '', price: product.price || '', discount_price: Number(product.discount_price) > 0 ? product.discount_price : '', category_id: product.category?.id || '', brand_id: product.brand?.id || '', is_available: product.is_available !== false });
+    const localDate = (value) => { if (!value) return ''; const date = new Date(value); return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
+    setProductForm({ product_name: product.product_name || '', sku: product.sku || '', description: product.description || '', price: product.price || '', discount_price: Number(product.discount_price) > 0 ? product.discount_price : '', compare_at_price: product.compare_at_price || '', sale_starts_at: localDate(product.sale_starts_at), sale_ends_at: localDate(product.sale_ends_at), is_featured: Boolean(product.is_featured), category_id: product.category?.id || '', brand_id: product.brand?.id || '', is_available: product.is_available !== false });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -171,7 +184,7 @@ export const InventoryPage = () => {
       {error && <div className="error" role="alert">{error}</div>}{notice && <div className="success" role="status">{notice}</div>}
       <div className="admin-stat-grid"><div className="admin-stat-card"><span>CATALOG</span><strong>{products.length}</strong><small>Products</small></div><div className="admin-stat-card"><span>AVAILABLE STOCK</span><strong>{totalUnits.toLocaleString()}</strong><small>Units across all options</small></div><div className="admin-stat-card"><span>NEEDS ATTENTION</span><strong>{lowStock}</strong><small>Low stock options</small></div><div className="admin-stat-card"><span>PRODUCT PHOTOGRAPHY</span><strong>{allImages.length}</strong><small>Images on products</small></div></div>
       <div className="admin-tabs" role="tablist" aria-label="Catalog management">
-        {[['stock', 'Stock & variants'], ['catalog', 'Products & images'], ['taxonomy', 'Categories & brands']].map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'active' : ''} onClick={() => { setTab(value); setError(''); }}>{label}</button>)}
+        {[['stock', 'Stock & variants'], ['catalog', 'Products & images'], ['taxonomy', 'Categories & brands'], ['delivery', 'Delivery zones']].map(([value, label]) => <button key={value} type="button" role="tab" aria-selected={tab === value} className={tab === value ? 'active' : ''} onClick={() => { setTab(value); setError(''); }}>{label}</button>)}
       </div>
 
       {tab === 'stock' && <div className="admin-workspace">
@@ -203,6 +216,8 @@ export const InventoryPage = () => {
         </section>
       </div>}
 
+      {tab === 'delivery' && <div className="admin-catalog-grid"><section className="admin-panel"><div className="admin-panel-heading"><div><span className="admin-step">AREA BASED RATES</span><h2>{editingZone ? 'Edit delivery zone' : 'Add delivery zone'}</h2></div></div><form className="admin-form-grid" onSubmit={saveZone}><label>Zone name<input required value={zoneForm.name} onChange={(e) => setZoneForm({ ...zoneForm, name: e.target.value })} placeholder="Chattogram metro" /></label><label>Delivery fee (BDT)<input required type="number" min="0" step="0.01" value={zoneForm.delivery_fee} onChange={(e) => setZoneForm({ ...zoneForm, delivery_fee: e.target.value })} /></label><label className="admin-field-wide">Matched city/area names<input required value={zoneForm.areas} onChange={(e) => setZoneForm({ ...zoneForm, areas: e.target.value })} placeholder="Chattogram, Agrabad, Halishahar" /><small>Comma-separated; match is checked against city, state and street address.</small></label><label className="admin-checkbox"><input type="checkbox" checked={zoneForm.is_active} onChange={(e) => setZoneForm({ ...zoneForm, is_active: e.target.checked })} /> Active zone</label><div className="admin-form-actions"><button className="btn-submit" disabled={saving}>{editingZone ? 'Save zone' : 'Add zone'}</button>{editingZone && <button type="button" className="admin-quiet-button" onClick={() => { setEditingZone(null); setZoneForm({ name: '', areas: '', delivery_fee: '100', is_active: true }); }}>Cancel</button>}</div></form></section><section className="admin-panel"><div className="admin-panel-heading"><div><span className="admin-step">CURRENT DELIVERY ZONES</span><h2>Rates by area</h2></div></div>{deliveryZones.length ? <div className="admin-entity-list">{deliveryZones.map((zone) => <div key={zone.id}><span><strong>{zone.name} · ৳{zone.delivery_fee}</strong><small>{zone.areas} · {zone.is_active ? 'Active' : 'Inactive'}</small></span><span className="admin-row-actions"><button type="button" onClick={() => { setEditingZone(zone.id); setZoneForm({ ...zone, delivery_fee: String(zone.delivery_fee) }); }}>Edit</button><button type="button" className="danger" onClick={() => runAction(() => productsAPI.deleteDeliveryZone(zone.id), 'Delivery zone deleted.')}>Delete</button></span></div>)}</div> : <p>No area-specific rates yet. Dhaka and outside Dhaka default rates will apply.</p>}</section></div>}
+
       {tab === 'catalog' && <div className="admin-catalog-grid">
         <section className="admin-panel">
           <div className="admin-panel-heading"><div><span className="admin-step">01 · PRODUCT DETAILS</span><h2>{editingProduct ? 'Edit product' : 'Add a product'}</h2></div></div>
@@ -213,8 +228,12 @@ export const InventoryPage = () => {
             <label>Brand<select required value={productForm.brand_id} onChange={(e) => setProductForm({ ...productForm, brand_id: e.target.value })}><option value="">Choose brand</option>{brands.map((b) => <option key={b.id} value={b.id}>{b.brand_name}</option>)}</select></label>
             <label>Price (BDT)<input required type="number" min="0" step="0.01" value={productForm.price} onChange={(e) => setProductForm({ ...productForm, price: e.target.value })} /></label>
             <label>Sale price (optional)<input type="number" min="0" step="0.01" value={productForm.discount_price} onChange={(e) => setProductForm({ ...productForm, discount_price: e.target.value })} /></label>
+            <label>Compare-at price<input type="number" min="0" step="0.01" value={productForm.compare_at_price} onChange={(e) => setProductForm({ ...productForm, compare_at_price: e.target.value })} /></label>
+            <label>Sale starts<input type="datetime-local" value={productForm.sale_starts_at} onChange={(e) => setProductForm({ ...productForm, sale_starts_at: e.target.value })} /></label>
+            <label>Sale ends<input type="datetime-local" value={productForm.sale_ends_at} onChange={(e) => setProductForm({ ...productForm, sale_ends_at: e.target.value })} /></label>
             <label className="admin-field-wide">Description<textarea rows="4" value={productForm.description} onChange={(e) => setProductForm({ ...productForm, description: e.target.value })} /></label>
             <label className="admin-checkbox"><input type="checkbox" checked={productForm.is_available} onChange={(e) => setProductForm({ ...productForm, is_available: e.target.checked })} /> Show as available in the storefront</label>
+            <label className="admin-checkbox"><input type="checkbox" checked={productForm.is_featured} onChange={(e) => setProductForm({ ...productForm, is_featured: e.target.checked })} /> Feature on homepage</label>
             <div className="admin-form-actions"><button className="btn-submit" disabled={saving}>{saving ? 'Saving...' : editingProduct ? 'Save changes' : 'Create product'}</button>{editingProduct && <button className="admin-quiet-button" type="button" onClick={() => { setEditingProduct(null); setProductForm(emptyProduct); }}>Cancel</button>}</div>
           </form>
         </section>

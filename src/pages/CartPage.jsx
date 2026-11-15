@@ -10,6 +10,8 @@ export const CartPage = () => {
   const [cart, setCart] = useState(null);
   const [addresses, setAddresses] = useState([]);
   const [deliveryRates, setDeliveryRates] = useState({ dhaka_delivery_fee: 70, outside_delivery_fee: 130 });
+  const [deliveryZones, setDeliveryZones] = useState([]);
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(2500);
   const [addressId, setAddressId] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cash_on_delivery');
   const [couponCode, setCouponCode] = useState('');
@@ -24,13 +26,14 @@ export const CartPage = () => {
   };
 
   useEffect(() => {
-    Promise.all([cartAPI.getCart(), authAPI.getAddresses(), productsAPI.getStoreSettings().catch(() => null)])
-      .then(([cartRes, addressRes, settingsRes]) => {
+    Promise.all([cartAPI.getCart(), authAPI.getAddresses(), productsAPI.getStoreSettings().catch(() => null), productsAPI.getDeliveryZones().catch(() => ({ data: [] }))])
+      .then(([cartRes, addressRes, settingsRes, zonesRes]) => {
         setCart(cartRes.data);
         const list = asList(addressRes.data);
         setAddresses(list);
         const config = settingsRes ? asList(settingsRes.data)[0] : null;
-        if (config) setDeliveryRates({ dhaka_delivery_fee: Number(config.dhaka_delivery_fee), outside_delivery_fee: Number(config.outside_delivery_fee) });
+        if (config) { setDeliveryRates({ dhaka_delivery_fee: Number(config.dhaka_delivery_fee), outside_delivery_fee: Number(config.outside_delivery_fee) }); setFreeShippingThreshold(Number(config.free_shipping_threshold ?? 2500)); }
+        setDeliveryZones(asList(zonesRes.data));
         if (list.length) setAddressId(String(list[0].id));
       })
       .catch((err) => setError(err.response?.data?.detail || 'Could not load your cart. Please refresh and try again.'))
@@ -101,7 +104,10 @@ export const CartPage = () => {
   if (loading) return <Loading />;
   const items = cart?.items || [];
   const deliveryAddress = addresses.find((address) => String(address.id) === String(addressId));
-  const shippingFee = deliveryAddress && ['dhaka', 'ঢাকা'].includes((deliveryAddress.city || '').trim().toLowerCase()) ? deliveryRates.dhaka_delivery_fee : deliveryRates.outside_delivery_fee;
+  const addressText = deliveryAddress ? `${deliveryAddress.city || ''} ${deliveryAddress.state || ''}`.toLowerCase() : '';
+  const matchedZone = deliveryZones.find((zone) => zone.areas.split(',').some((area) => area.trim() && addressText.includes(area.trim().toLowerCase())));
+  const effectiveSubtotal = Math.max(0, Number(cart?.total_amount || 0) * (coupon?.valid ? (100 - Number(coupon.discount || 0)) / 100 : 1));
+  const shippingFee = !deliveryAddress || effectiveSubtotal >= freeShippingThreshold ? 0 : matchedZone ? Number(matchedZone.delivery_fee) : ['dhaka', 'ঢাকা'].includes((deliveryAddress.city || '').trim().toLowerCase()) ? deliveryRates.dhaka_delivery_fee : deliveryRates.outside_delivery_fee;
 
   return (
     <main className="page cart-page">
@@ -114,7 +120,7 @@ export const CartPage = () => {
               <div className="item-info">
                 <h3><Link className="cart-product-link" to={`/product/${item.product?.slug}`}>{item.product?.product_name}</Link></h3>
                 <p>Color: {item.color?.color || '—'} · Size: {item.size?.size_type || '—'}</p>
-                <p>Unit price: ৳{item.product?.discount_price > 0 ? item.product.discount_price : item.product?.price}</p>
+                <p>Unit price: ৳{item.product?.current_price ?? (item.product?.discount_price > 0 ? item.product.discount_price : item.product?.price)}</p>
                 <p>Subtotal: ৳{item.subtotal}</p>
               </div>
               <div className="item-actions">
@@ -129,8 +135,9 @@ export const CartPage = () => {
           <aside className="cart-summary">
             <h2>Order summary</h2>
             <p>{cart.total_items} {cart.total_items === 1 ? 'item' : 'items'}</p>
-            {deliveryAddress && <p>Delivery fee <strong>৳{shippingFee}</strong></p>}
-            <p className="summary-total">Total <strong>৳{(Number(cart.total_amount) + (deliveryAddress ? shippingFee : 0)).toFixed(2)}</strong></p>
+            {deliveryAddress && <p>Delivery fee <strong>{shippingFee ? `৳${shippingFee}` : 'Free'}</strong></p>}
+            {deliveryAddress && freeShippingThreshold > effectiveSubtotal && <p>Spend ৳{(freeShippingThreshold - effectiveSubtotal).toFixed(2)} more for free shipping.</p>}
+            <p className="summary-total">Total <strong>৳{(effectiveSubtotal + (deliveryAddress ? shippingFee : 0)).toFixed(2)}</strong></p>
             <form className="checkout-form" onSubmit={validateCoupon}>
               <label htmlFor="coupon-code">Discount code</label>
               <div className="coupon-apply-row"><input id="coupon-code" value={couponCode} onChange={(event) => setCouponCode(event.target.value)} placeholder="Enter code" />

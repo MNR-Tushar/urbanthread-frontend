@@ -169,8 +169,8 @@ export const ProductDetailPage = () => {
         {wishlistError && <p className="product-wishlist-error" role="alert">{wishlistError}</p>}
         <p>{product.description}</p>
         <div className="product-meta"><span><strong>Brand:</strong> {product.brand?.brand_name || '—'}</span></div>
-        <div className="product-price">৳{product.discount_price > 0 ? product.discount_price : product.price}
-          {product.discount_price > 0 && <span className="discount">৳{product.price}</span>}
+        <div className="product-price">৳{product.current_price ?? (product.discount_price > 0 ? product.discount_price : product.price)}
+          {Number(product.current_price ?? product.price) < Number(product.compare_at_price || product.price) && <span className="discount">৳{product.compare_at_price || product.price}</span>}
         </div>
         <div className="variant-group">
           <label htmlFor="color-choice">Color</label>

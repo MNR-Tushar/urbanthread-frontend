@@ -10,9 +10,18 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
+  const [searchFocused, setSearchFocused] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [profileAvatar, setProfileAvatar] = useState('');
   const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    if (searchText.trim().length < 2) { setSuggestions([]); return undefined; }
+    let active = true;
+    const timer = window.setTimeout(() => productsAPI.suggestProducts(searchText.trim()).then(({ data }) => { if (active) setSuggestions(data); }).catch(() => { if (active) setSuggestions([]); }), 220);
+    return () => { active = false; window.clearTimeout(timer); };
+  }, [searchText]);
 
   useEffect(() => {
     if (!profileOpen) return undefined;
@@ -64,10 +73,11 @@ export const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">urban<span>thread</span><b>Â®</b></Link>
-        <form className="nav-search" onSubmit={(event) => { event.preventDefault(); navigate(`/products${searchText.trim() ? `?search=${encodeURIComponent(searchText.trim())}` : ''}`); }}>
+        <form className="nav-search" onSubmit={(event) => { event.preventDefault(); setSearchFocused(false); navigate(`/products${searchText.trim() ? `?search=${encodeURIComponent(searchText.trim())}` : ''}`); }}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 5 5" /></svg>
-          <input value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Search the collection" aria-label="Search products" />
+          <input value={searchText} onFocus={() => setSearchFocused(true)} onBlur={() => window.setTimeout(() => setSearchFocused(false), 150)} onChange={(event) => setSearchText(event.target.value)} placeholder="Search the collection" aria-label="Search products" />
           <button type="submit">Search</button>
+          {searchFocused && suggestions.length > 0 && <div className="nav-search-suggestions" role="listbox">{suggestions.map((item) => <Link key={item.id} to={`/product/${item.slug}`} onMouseDown={() => setSearchFocused(false)} role="option">{item.product_name}</Link>)}<button type="submit">See all results</button></div>}
         </form>
         <div className="navbar-actions">
           <Link to="/">Home</Link>

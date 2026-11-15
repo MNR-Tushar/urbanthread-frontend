@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/useAuth';
 import { Paginated } from '../components/Paginated';
 
 const asList = (data) => Array.isArray(data) ? data : data?.results || [];
-const priceOf = (product) => Number(product.discount_price) > 0 ? Number(product.discount_price) : Number(product.price || 0);
+const priceOf = (product) => Number(product.current_price ?? product.discount_price) > 0 ? Number(product.current_price ?? product.discount_price) : Number(product.price || 0);
 const taka = (value) => `৳${Number(value || 0).toLocaleString('en-BD')}`;
 
 export const ProductsPage = () => {
@@ -19,6 +19,7 @@ export const ProductsPage = () => {
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [banners, setBanners] = useState([]);
+  const [homeSections, setHomeSections] = useState({ featured: [], new_arrivals: [], best_sellers: [] });
   const [bannerIndex, setBannerIndex] = useState(0);
   const [wishlistItems, setWishlistItems] = useState({});
   const [loading, setLoading] = useState(true);
@@ -30,13 +31,14 @@ export const ProductsPage = () => {
 
   useEffect(() => {
     let active = true;
-    Promise.all([getAllPages(productsAPI.getProducts), getAllPages(productsAPI.getCategories), getAllPages(productsAPI.getBrands), productsAPI.getBanners()])
-      .then(([productRows, categoryRows, brandRows, bannerResponse]) => {
+    Promise.all([getAllPages(productsAPI.getProducts), getAllPages(productsAPI.getCategories), getAllPages(productsAPI.getBrands), productsAPI.getBanners(), productsAPI.getProductSections()])
+      .then(([productRows, categoryRows, brandRows, bannerResponse, sectionResponse]) => {
         if (!active) return;
         setProducts(productRows);
         setCategories(categoryRows);
         setBrands(brandRows);
         setBanners(asList(bannerResponse.data));
+        setHomeSections(sectionResponse.data);
       })
       .catch(() => { if (active) setError('We could not load the collection. Please refresh and try again.'); })
       .finally(() => { if (active) setLoading(false); });
@@ -135,24 +137,25 @@ export const ProductsPage = () => {
         <Paginated items={filteredProducts} pageSize={12} label="products">{(pageProducts) => <div className="product-grid">
           {filteredProducts.length === 0 ? <div className="catalog-empty"><span>⌕</span><h3>No pieces found</h3><p>Try a different search or clear your filters.</p><button className="text-button" onClick={() => { setSearchParams({}); setSelectedCategory(''); setSelectedBrand(''); }}>Clear filters</button></div> : pageProducts.map((product, index) => {
             const image = product.images?.[0]?.image;
-            const discounted = Number(product.discount_price) > 0;
+            const discounted = priceOf(product) < Number(product.price);
             return <article key={product.id} className="product-card">
               <Link className="product-image-link" to={`/product/${product.slug}`} aria-label={`View ${product.product_name}`}>
                 {image ? <img src={image} alt={product.product_name} className="product-img" loading={index > 3 ? 'lazy' : 'eager'} /> : <div className="product-img product-image-placeholder">UrbanThread</div>}
-                {discounted && <span className="product-badge">SPECIAL PRICE</span>}
+                {discounted && <span className="product-badge">SALE</span>}
                 <span className="product-card-arrow" aria-hidden="true">↗</span>
               </Link>
               <button type="button" className={`wishlist-toggle ${wishlistItems[product.id] ? 'saved' : ''}`} aria-label={wishlistItems[product.id] ? `Remove ${product.product_name} from wishlist` : `Add ${product.product_name} to wishlist`} aria-pressed={Boolean(wishlistItems[product.id])} onClick={() => toggleWishlist(product)}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" /></svg></button>
               <div className="product-card-content">
                 <div className="product-card-overline"><span>{product.category?.category_name || 'EVERYDAY ESSENTIALS'}</span><span>UT. {String(product.id).padStart(3, '0')}</span></div>
                 <Link className="product-title-link" to={`/product/${product.slug}`}><h3>{product.product_name}</h3></Link>
-                <div className="product-card-bottom"><div className="product-price">{taka(priceOf(product))}{discounted && <span className="discount">{taka(product.price)}</span>}</div><Link className="product-view-link" to={`/product/${product.slug}`}>Discover <span aria-hidden="true">→</span></Link></div>
+                <div className="product-card-bottom"><div className="product-price">{taka(priceOf(product))}{(discounted || Number(product.compare_at_price) > priceOf(product)) && <span className="discount">{taka(Number(product.compare_at_price) > priceOf(product) ? product.compare_at_price : product.price)}</span>}</div><Link className="product-view-link" to={`/product/${product.slug}`}>Discover <span aria-hidden="true">→</span></Link></div>
               </div>
             </article>;
           })}
         </div>}</Paginated>
       </section>
 
+      {isHome && <div className="home-product-sections">{[['featured', 'Featured picks'], ['new_arrivals', 'New arrivals'], ['best_sellers', 'Best sellers']].map(([key, title]) => homeSections[key]?.length > 0 && <section className="collection-section home-product-section" key={key}><div className="collection-heading"><div><p className="section-kicker">URBANTHREAD EDIT</p><h2>{title}</h2></div></div><div className="product-grid">{homeSections[key].slice(0, 4).map((product) => <article className="product-card" key={product.id}><Link className="product-image-link" to={`/product/${product.slug}`}>{product.images?.[0]?.image ? <img src={product.images[0].image} alt={product.product_name} className="product-img" loading="lazy" /> : <div className="product-img product-image-placeholder">UrbanThread</div>}</Link><div className="product-card-content"><span>{product.category?.category_name}</span><Link className="product-title-link" to={`/product/${product.slug}`}><h3>{product.product_name}</h3></Link><strong>{taka(priceOf(product))}</strong></div></article>)}</div></section>)}</div>}
       {isHome && <section className="store-promise"><div><span>01</span><strong>Comfort, always</strong><p>Easy-to-wear fits for every day.</p></div><div><span>02</span><strong>Made to last</strong><p>Thoughtful details. Better basics.</p></div><div><span>03</span><strong>Simple delivery</strong><p>Reliable delivery, right to your door.</p></div></section>}
     </main>
   );
