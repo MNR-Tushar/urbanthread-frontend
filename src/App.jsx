@@ -18,6 +18,7 @@ import { AdminDashboard } from './pages/AdminDashboard';
 import { OrderTrackingPage } from './pages/OrderTrackingPage';
 import { WishlistPage } from './pages/WishlistPage';
 import { AdminCustomerProfilePage } from './pages/AdminCustomerProfilePage';
+import { ReturnsPage } from './pages/ReturnsPage';
 
 function AppWithAuth() {
   const { isAuthenticated, loading } = useAuth();
@@ -29,11 +30,12 @@ function AppWithAuth() {
         <Route path="/" element={<ProductsPage />} />
         <Route path="/products" element={<ProductsPage />} />
         <Route path="/product/:slug" element={<ProductDetailPage />} />
-        <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+        <Route path="/cart" element={<CartPage />} />
         <Route path="/login" element={loading ? <div className="loading">Loading...</div> : !isAuthenticated ? <LoginPage /> : <Navigate to="/" replace />} />
         <Route path="/register" element={loading ? <div className="loading">Loading...</div> : !isAuthenticated ? <RegisterPage /> : <Navigate to="/" replace />} />
         <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
-        <Route path="/orders/:orderId/track" element={<ProtectedRoute><OrderTrackingPage /></ProtectedRoute>} />
+        <Route path="/returns" element={<ReturnsPage />} />
+        <Route path="/orders/:orderId/track" element={<OrderTrackingPage />} />
         <Route path="/admin/orders/:orderId" element={<AdminRoute><OrderTrackingPage adminView /></AdminRoute>} />
         <Route path="/wishlist" element={<ProtectedRoute><WishlistPage /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

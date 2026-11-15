@@ -13,6 +13,10 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem('access_token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
+  } else {
+    let guestToken = localStorage.getItem('guest_cart_token');
+    if (!guestToken) { guestToken = crypto.randomUUID(); localStorage.setItem('guest_cart_token', guestToken); }
+    config.headers['X-Guest-Cart'] = guestToken;
   }
   return config;
 });
@@ -81,6 +85,7 @@ export const productsAPI = {
   getProductSections: () => api.get('/products/products/sections/'),
   suggestProducts: (q) => api.get('/products/products/suggest/', { params: { q } }),
   getProduct: (id) => api.get(`/products/products/${id}/`),
+  getRelatedProducts: (slug) => api.get(`/products/products/${slug}/related/`),
   createProduct: (data) => api.post('/products/products/', data),
   updateProduct: (id, data) => api.patch(`/products/products/${id}/`, data),
   deleteProduct: (id) => api.delete(`/products/products/${id}/`),
@@ -157,9 +162,16 @@ export const inventoryAPI = {
 export const reviewsAPI = {
   getReviews: (params) => api.get('/reviews/', { params }),
   getReview: (id) => api.get(`/reviews/${id}/`),
-  createReview: (data) => api.post('/reviews/', data),
-  updateReview: (id, data) => api.patch(`/reviews/${id}/`, data),
+  createReview: (data) => api.post('/reviews/', data, data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined),
+  updateReview: (id, data) => api.patch(`/reviews/${id}/`, data, data instanceof FormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : undefined),
   deleteReview: (id) => api.delete(`/reviews/${id}/`),
+  markHelpful: (id) => api.post(`/reviews/${id}/helpful/`),
+};
+
+export const returnsAPI = {
+  getRequests: () => api.get('/orders/return-requests/'),
+  createRequest: (data) => api.post('/orders/return-requests/', data),
+  reviewRequest: (id, data) => api.patch(`/orders/return-requests/${id}/`, data),
 };
 
 export const getAllPages = async (request) => {

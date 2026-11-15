@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authAPI, cartAPI, couponsAPI, ordersAPI, paymentsAPI, productsAPI } from '../api';
 import { Loading } from '../components/common';
+import { useAuth } from '../contexts/useAuth';
 
 const asList = (data) => data?.results || data || [];
 
 export const CartPage = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [cart, setCart] = useState(null);
   const [addresses, setAddresses] = useState([]);
   const [deliveryRates, setDeliveryRates] = useState({ dhaka_delivery_fee: 70, outside_delivery_fee: 130 });
@@ -19,6 +21,8 @@ export const CartPage = () => {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [guestAddress, setGuestAddress] = useState({ guest_name: '', guest_email: '', guest_phone: '', city: '', state: '', pincode: '', address: '' });
+  const [checkoutComplete, setCheckoutComplete] = useState(null);
 
   const reloadCart = async () => {
     const { data } = await cartAPI.getCart();
@@ -26,7 +30,7 @@ export const CartPage = () => {
   };
 
   useEffect(() => {
-    Promise.all([cartAPI.getCart(), authAPI.getAddresses(), productsAPI.getStoreSettings().catch(() => null), productsAPI.getDeliveryZones().catch(() => ({ data: [] }))])
+    Promise.all([cartAPI.getCart(), isAuthenticated ? authAPI.getAddresses() : Promise.resolve({ data: [] }), productsAPI.getStoreSettings().catch(() => null), productsAPI.getDeliveryZones().catch(() => ({ data: [] }))])
       .then(([cartRes, addressRes, settingsRes, zonesRes]) => {
         setCart(cartRes.data);
         const list = asList(addressRes.data);
@@ -38,7 +42,7 @@ export const CartPage = () => {
       })
       .catch((err) => setError(err.response?.data?.detail || 'Could not load your cart. Please refresh and try again.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAuthenticated]);
 
   const changeQuantity = async (itemId, quantity) => {
     setBusy(true); setError('');
@@ -61,13 +65,16 @@ export const CartPage = () => {
   };
 
   const checkout = async () => {
-    if (!addressId) { setError('Add a delivery address from your profile before checkout.'); return; }
+    const guestComplete = Object.values(guestAddress).every((value) => String(value).trim());
+    if (isAuthenticated && !addressId) { setError('Choose a delivery address before checkout.'); return; }
+    if (!isAuthenticated && !guestComplete) { setError('Complete your contact and delivery details to continue.'); return; }
     setBusy(true); setError('');
     try {
-      const { data: order } = await ordersAPI.createOrder({
-        address_id: Number(addressId), payment_method: paymentMethod, coupon_code: coupon?.valid ? coupon.code : '',
-      });
+      const { data: order } = await ordersAPI.createOrder(isAuthenticated
+        ? { address_id: Number(addressId), payment_method: paymentMethod, coupon_code: coupon?.valid ? coupon.code : '' }
+        : { ...guestAddress, payment_method: 'cash_on_delivery', coupon_code: coupon?.valid ? coupon.code : '' });
       await reloadCart();
+      if (!isAuthenticated) { setCheckoutComplete(order); return; }
       let payment;
       try {
         ({ data: payment } = await paymentsAPI.initiatePayment({ order_number: order.order_number, payment_method: paymentMethod }));
@@ -104,10 +111,13 @@ export const CartPage = () => {
   if (loading) return <Loading />;
   const items = cart?.items || [];
   const deliveryAddress = addresses.find((address) => String(address.id) === String(addressId));
-  const addressText = deliveryAddress ? `${deliveryAddress.city || ''} ${deliveryAddress.state || ''}`.toLowerCase() : '';
+  const currentAddress = deliveryAddress || (!isAuthenticated && guestAddress.city ? guestAddress : null);
+  const addressText = currentAddress ? `${currentAddress.city || ''} ${currentAddress.state || ''} ${currentAddress.address || ''}`.toLowerCase() : '';
   const matchedZone = deliveryZones.find((zone) => zone.areas.split(',').some((area) => area.trim() && addressText.includes(area.trim().toLowerCase())));
   const effectiveSubtotal = Math.max(0, Number(cart?.total_amount || 0) * (coupon?.valid ? (100 - Number(coupon.discount || 0)) / 100 : 1));
-  const shippingFee = !deliveryAddress || effectiveSubtotal >= freeShippingThreshold ? 0 : matchedZone ? Number(matchedZone.delivery_fee) : ['dhaka', 'ঢাকা'].includes((deliveryAddress.city || '').trim().toLowerCase()) ? deliveryRates.dhaka_delivery_fee : deliveryRates.outside_delivery_fee;
+  const shippingFee = !currentAddress || effectiveSubtotal >= freeShippingThreshold ? 0 : matchedZone ? Number(matchedZone.delivery_fee) : ['dhaka', 'ঢাকা'].includes((currentAddress.city || '').trim().toLowerCase()) ? deliveryRates.dhaka_delivery_fee : deliveryRates.outside_delivery_fee;
+
+  if (checkoutComplete) return <main className="page"><section className="order-tracking-card"><p className="eyebrow">ORDER RECEIVED</p><h1>Thank you, {checkoutComplete.customer_name}.</h1><p>Your order <strong>{checkoutComplete.order_number}</strong> is confirmed. We sent the order details to {checkoutComplete.customer_email}.</p><p>Track your order: <Link to={`/orders/${checkoutComplete.id}/track`}>View delivery progress</Link></p><Link className="btn-submit" to="/products">Continue shopping</Link></section></main>;
 
   return (
     <main className="page cart-page">
@@ -135,29 +145,29 @@ export const CartPage = () => {
           <aside className="cart-summary">
             <h2>Order summary</h2>
             <p>{cart.total_items} {cart.total_items === 1 ? 'item' : 'items'}</p>
-            {deliveryAddress && <p>Delivery fee <strong>{shippingFee ? `৳${shippingFee}` : 'Free'}</strong></p>}
-            {deliveryAddress && freeShippingThreshold > effectiveSubtotal && <p>Spend ৳{(freeShippingThreshold - effectiveSubtotal).toFixed(2)} more for free shipping.</p>}
-            <p className="summary-total">Total <strong>৳{(effectiveSubtotal + (deliveryAddress ? shippingFee : 0)).toFixed(2)}</strong></p>
+            {currentAddress && <p>Delivery fee <strong>{shippingFee ? `৳${shippingFee}` : 'Free'}</strong></p>}
+            {currentAddress && freeShippingThreshold > effectiveSubtotal && <p>Spend ৳{(freeShippingThreshold - effectiveSubtotal).toFixed(2)} more for free shipping.</p>}
+            <p className="summary-total">Total <strong>৳{(effectiveSubtotal + (currentAddress ? shippingFee : 0)).toFixed(2)}</strong></p>
             <form className="checkout-form" onSubmit={validateCoupon}>
               <label htmlFor="coupon-code">Discount code</label>
               <div className="coupon-apply-row"><input id="coupon-code" value={couponCode} onChange={(event) => setCouponCode(event.target.value)} placeholder="Enter code" />
                 <button type="submit" className="btn-secondary">Apply</button></div>
               {coupon?.valid && <p className="success">{coupon.message}</p>}
             </form>
-            {addresses.length ? <div className="checkout-field">
+            {isAuthenticated && addresses.length ? <div className="checkout-field">
               <label htmlFor="delivery-address">Delivery address</label>
               <select id="delivery-address" value={addressId} onChange={(event) => setAddressId(event.target.value)}>
                 {addresses.map((address) => <option key={address.id} value={address.id}>{[address.address, address.city, address.state, address.pincode].filter(Boolean).join(', ')}</option>)}
               </select>
-            </div> : <p className="address-needed">No saved address. <Link to="/profile">Add one in your profile</Link>.</p>}
+            </div> : isAuthenticated ? <p className="address-needed">No saved address. <Link to="/profile">Add one in your profile</Link>.</p> : <div className="checkout-field guest-checkout-fields"><h3>Guest checkout</h3>{[['guest_name', 'Full name'], ['guest_email', 'Email'], ['guest_phone', 'Phone'], ['city', 'City / district'], ['state', 'Area / division'], ['pincode', 'Postcode'], ['address', 'Full delivery address']].map(([key, label]) => <label key={key}>{label}<input required type={key === 'guest_email' ? 'email' : 'text'} value={guestAddress[key]} onChange={(event) => setGuestAddress({ ...guestAddress, [key]: event.target.value })} /></label>)}</div>}
             <div className="checkout-field">
               <label htmlFor="payment-method">Payment method</label>
               <select id="payment-method" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value)}>
                 <option value="cash_on_delivery">Cash on delivery</option>
-                <option value="sslcommerz">Pay online with SSLCommerz</option>
+                {isAuthenticated && <option value="sslcommerz">Pay online with SSLCommerz</option>}
               </select>
             </div>
-            <button className="btn-checkout" disabled={busy || !addresses.length} onClick={checkout}>{busy ? 'Processing…' : 'Place order'}</button>
+            <button className="btn-checkout" disabled={busy || (isAuthenticated && !addresses.length)} onClick={checkout}>{busy ? 'Processing…' : 'Place order'}</button>
           </aside>
         </div>
       </>}

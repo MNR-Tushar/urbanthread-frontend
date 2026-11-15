@@ -42,7 +42,6 @@ export const Navbar = () => {
   useEffect(() => {
     let active = true;
     const refreshCartCount = () => {
-      if (!isAuthenticated) { setCartCount(0); return; }
       cartAPI.getCart().then(({ data }) => {
         if (active) setCartCount(new Set((data.items || []).map((item) => item.product?.id).filter(Boolean)).size);
       }).catch(() => { if (active) setCartCount(0); });
@@ -98,6 +97,7 @@ export const Navbar = () => {
             {profileOpen && <div className="profile-dropdown" role="menu">
               <Link role="menuitem" to="/profile" onClick={() => setProfileOpen(false)}><MenuIcon name="account" /><span>Account Info</span></Link>
               <Link role="menuitem" to="/orders" onClick={() => setProfileOpen(false)}><MenuIcon name="orders" /><span>Orders &amp; Tracking</span></Link>
+              <Link role="menuitem" to="/returns" onClick={() => setProfileOpen(false)}><MenuIcon name="orders" /><span>Returns &amp; Refunds</span></Link>
               <Link role="menuitem" to="/reviews" onClick={() => setProfileOpen(false)}><MenuIcon name="reviews" /><span>Rating &amp; Reviews</span></Link>
               <Link role="menuitem" to="/payments" onClick={() => setProfileOpen(false)}><MenuIcon name="payments" /><span>Payment Info</span></Link>
               <Link role="menuitem" to="/wishlist" onClick={() => setProfileOpen(false)}><MenuIcon name="wishlist" /><span>Wishlist</span></Link>

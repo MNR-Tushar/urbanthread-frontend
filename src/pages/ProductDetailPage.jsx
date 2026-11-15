@@ -21,6 +21,9 @@ export const ProductDetailPage = () => {
   const [error, setError] = useState('');
   const [addSuccess, setAddSuccess] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [relatedProducts, setRelatedProducts] = useState([]);
+  const [recentlyViewed, setRecentlyViewed] = useState([]);
+  const [reviewImages, setReviewImages] = useState([]);
   const [wishlistId, setWishlistId] = useState(null);
   const [wishlistBusy, setWishlistBusy] = useState(false);
   const [wishlistError, setWishlistError] = useState('');
@@ -57,6 +60,18 @@ export const ProductDetailPage = () => {
   }, [product?.id]);
 
   useEffect(() => {
+    if (!product?.id) return;
+    let active = true;
+    productsAPI.getRelatedProducts(product.slug).then(({ data }) => { if (active) setRelatedProducts(data.results || data); }).catch(() => {});
+    let stored = [];
+    try { stored = JSON.parse(localStorage.getItem('recently_viewed_products') || '[]'); } catch { stored = []; }
+    const previous = stored.filter((item) => Number(item.id) !== Number(product.id));
+    setRecentlyViewed(previous.slice(0, 4));
+    localStorage.setItem('recently_viewed_products', JSON.stringify([product, ...previous].slice(0, 5)));
+    return () => { active = false; };
+  }, [product?.id]);
+
+  useEffect(() => {
     if (!isAuthenticated || !product?.id) { setWishlistId(null); return undefined; }
     let active = true;
     productsAPI.getWishlist().then(({ data }) => {
@@ -88,8 +103,10 @@ export const ProductDetailPage = () => {
     if (!isAuthenticated) { navigate('/login'); return; }
     setReviewSaving(true); setReviewError(''); setReviewNotice('');
     try {
-      const response = await reviewsAPI.createReview({ product: Number(product.id), rating: Number(reviewRating), review_text: reviewText.trim() });
-      setReviewText(''); setReviewRating(5);
+      const payload = new FormData(); payload.append('product', product.id); payload.append('rating', reviewRating); payload.append('review_text', reviewText.trim());
+      reviewImages.forEach((image) => payload.append('images', image));
+      const response = await reviewsAPI.createReview(payload);
+      setReviewText(''); setReviewRating(5); setReviewImages([]);
       setPendingReview(response.data);
       setReviewNotice('Thanks! Your review was submitted and will appear after approval.');
       try {
@@ -114,7 +131,6 @@ export const ProductDetailPage = () => {
   }, [product?.id, selectedColor, selectedSize]);
 
   const addToCart = async () => {
-    if (!isAuthenticated) { navigate('/login'); return; }
     if (!selectedColor || !selectedSize) { setError('Please choose a color and size.'); return; }
     setAdding(true); setError(''); setAddSuccess(false);
     try {
@@ -196,13 +212,13 @@ export const ProductDetailPage = () => {
         {error && <div className="error" role="alert">{error}</div>}
         {addSuccess && <div className="success" role="status">Added to cart. <Link to="/cart">View cart</Link></div>}
         <button className="btn-add" onClick={addToCart} disabled={adding || !variantAvailability?.available || quantity > availableQuantity}>
-          {adding ? 'Adding…' : isAuthenticated ? 'Add to cart' : 'Sign in to add to cart'}
+          {adding ? 'Adding…' : 'Add to cart'}
         </button>
       </section>
       <section className="product-reviews" aria-labelledby="product-reviews-title">
         <div className="product-reviews-heading">
           <div><p className="eyebrow">CUSTOMER FEEDBACK</p><h2 id="product-reviews-title">Reviews</h2></div>
-          <span>{approvedReviews.length} {approvedReviews.length === 1 ? 'review' : 'reviews'}</span>
+          <span aria-label={`${product.average_rating} average rating`}>{'★'.repeat(Math.round(Number(product.average_rating || 0)))} {Number(product.average_rating || 0).toFixed(1)} · {product.review_count || approvedReviews.length} reviews</span>
         </div>
         {reviewNotice && <p className="success" role="status">{reviewNotice}</p>}
         {reviewError && <p className="error" role="alert">{reviewError}</p>}
@@ -215,6 +231,8 @@ export const ProductDetailPage = () => {
             </select>
             <label htmlFor="product-review-text">Your review</label>
             <textarea id="product-review-text" value={reviewText} onChange={(event) => setReviewText(event.target.value)} rows="3" maxLength="1200" required placeholder="What did you think of this product?" />
+            <label htmlFor="product-review-images">Add photos (up to 5)</label>
+            <input id="product-review-images" type="file" accept="image/png,image/jpeg,image/webp" multiple onChange={(event) => setReviewImages(Array.from(event.target.files || []).slice(0, 5))} />
             <button type="submit" disabled={reviewSaving || !reviewText.trim()}>{reviewSaving ? 'Submitting…' : 'Submit review'}</button>
           </> : <p><Link to="/login">Sign in</Link> to write a review.</p>}
         </form>
@@ -225,12 +243,20 @@ export const ProductDetailPage = () => {
             <time>{Number(displayedPendingReview.rating)}/5</time>
           </article>}
           {approvedReviews.length ? <Paginated items={approvedReviews} pageSize={5} label="product reviews">{(pageReviews) => pageReviews.map((review) => <article className="product-review-card" key={review.id}>
-            <div><strong>{review.user?.username || 'Customer'}</strong><span className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{'★'.repeat(Number(review.rating))}{'☆'.repeat(5 - Number(review.rating))}</span></div>
+            <div><strong>{review.user?.username || 'Customer'}</strong>{review.verified_purchase && <span className="verified-purchase">Verified purchase</span>}<span className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{'★'.repeat(Number(review.rating))}{'☆'.repeat(5 - Number(review.rating))}</span></div>
             <p>{review.review_text}</p>
+            {review.review_images?.length > 0 && <div className="review-image-gallery">{review.review_images.map((src) => <img key={src} src={src} alt="Customer review" loading="lazy" />)}</div>}
+            <button type="button" className="admin-quiet-button" disabled={!isAuthenticated || review.user_found_helpful} onClick={async () => { try { await reviewsAPI.markHelpful(review.id); setReviews((current) => current.map((row) => row.id === review.id ? { ...row, helpful_count: (row.helpful_count || 0) + 1, user_found_helpful: true } : row)); } catch {} }}>Helpful · {review.helpful_count || 0}</button>
             {review.created_at && <time dateTime={review.created_at}>{new Date(review.created_at).toLocaleDateString()}</time>}
           </article>)}</Paginated> : !displayedPendingReview && <p className="product-review-empty">No reviews yet. Be the first to share your experience.</p>}
         </div>
       </section>
+      {relatedProducts.length > 0 && <ProductRecommendations title="You may also like" products={relatedProducts} />}
+      {recentlyViewed.length > 0 && <ProductRecommendations title="Recently viewed" products={recentlyViewed} />}
     </main>
   );
 };
+
+function ProductRecommendations({ title, products }) {
+  return <section className="collection-section product-recommendations"><div className="collection-heading"><div><p className="section-kicker">URBANTHREAD EDIT</p><h2>{title}</h2></div></div><div className="product-grid">{products.map((item) => <article className="product-card" key={item.id}><Link className="product-image-link" to={`/product/${item.slug}`}>{item.images?.[0]?.image ? <img className="product-img" src={item.images[0].image} alt={item.product_name} loading="lazy" /> : <div className="product-img product-image-placeholder">UrbanThread</div>}</Link><div className="product-card-content"><Link className="product-title-link" to={`/product/${item.slug}`}><h3>{item.product_name}</h3></Link><strong>৳{item.current_price ?? item.price}</strong></div></article>)}</div></section>;
+}
