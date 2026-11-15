@@ -132,6 +132,37 @@ h2 { font-size: clamp(1.45rem, 2.5vw, 2rem); }
 .password-change-section { grid-column: 1 / -1; }
 .password-change-section .profile-form { max-width: 580px; }
 .password-change-section .btn-submit { margin-top: 8px; }
+.my-reviews-intro { max-width: 620px; margin: 8px 0 26px; color: var(--muted); }
+.my-review-list { display: grid; gap: 16px; }
+.my-review-card { display: grid; gap: 18px; padding: 20px; border: 1px solid var(--line); background: #fffefa; }
+.my-review-product { display: flex; align-items: center; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
+.my-review-product-image { display: grid; width: 82px; height: 96px; flex: 0 0 82px; place-items: center; overflow: hidden; background: #f1f0e9; color: var(--muted); text-decoration: none; }
+.my-review-product-image img { width: 100%; height: 100%; object-fit: cover; }
+.my-review-image-placeholder { font: 600 1.1rem Georgia, serif; }
+.my-review-product .eyebrow { margin: 0 0 5px; font-size: .65rem; }
+.my-review-product h2 { margin: 0 0 4px; font-size: 1.25rem; }
+.my-review-product h2 a { color: var(--ink); text-decoration: none; }
+.my-review-product h2 a:hover { color: var(--green); }
+.my-review-product small, .my-review-copy > small { color: var(--muted); }
+.my-review-copy { display: grid; justify-items: start; gap: 9px; }
+.my-review-copy > p { margin: 0; }
+.my-review-copy .review-stars { color: #a5792f; letter-spacing: .12em; }
+.my-review-edit-form { display: grid; max-width: 720px; gap: 14px; }
+.my-review-edit-form label { display: grid; gap: 6px; font-weight: 700; }
+.my-review-edit-form select, .my-review-edit-form textarea { width: 100%; min-height: 44px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: white; }
+.my-review-edit-form textarea { min-height: 130px; resize: vertical; }
+.my-reviews-empty { display: grid; justify-items: center; gap: 10px; padding: 54px 22px; border: 1px dashed #cdd4ca; background: rgba(255,255,255,.6); text-align: center; }
+.my-reviews-empty > span { color: #a5792f; font-size: 2rem; }
+.my-reviews-empty h2, .my-reviews-empty p { margin: 0; }
+.my-reviews-empty p { max-width: 510px; color: var(--muted); }
+.my-reviews-empty .btn-submit { margin-top: 8px; text-decoration: none; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--muted); font-size: .78rem; }
+.auth-divider::before, .auth-divider::after { height: 1px; flex: 1; background: var(--line); content: ''; }
+.google-sign-in-wrap { display: grid; justify-items: center; gap: 10px; }
+.google-sign-in-button { width: 100%; min-height: 42px; display: flex; justify-content: center; }
+.oauth-setup-note { margin: 8px 0; color: var(--muted); font-size: .8rem; text-align: center; }
+.verify-email-copy { margin: 8px 0 18px; color: var(--muted); }
+.auth-switch-link { margin-top: 1rem; color: #64748b; text-align: center; }
 @keyframes skeleton-shimmer { to { background-position-x: -150%; } }
 @media (max-width: 700px) { .skeleton-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } }
 @media (prefers-reduced-motion: reduce) { .skeleton-heading i, .skeleton-card > i, .skeleton-card > span, .skeleton-card > b { animation: none; } }

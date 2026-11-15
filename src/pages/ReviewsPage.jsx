@@ -1,131 +1,90 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { reviewsAPI, productsAPI } from '../api';
-import { useAuth } from '../contexts/useAuth';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, Navigate, useParams } from 'react-router-dom';
+import { getAllPages, reviewsAPI } from '../api';
+import { Loading } from '../components/common';
 import { Paginated } from '../components/Paginated';
+import { useAuth } from '../contexts/useAuth';
+
+const responseError = (error) => error.response?.data?.detail || error.response?.data?.error || 'Could not complete that action. Please try again.';
 
 export const ReviewsPage = () => {
   const { productId } = useParams();
+  const { isAuthenticated, user, loading: authLoading } = useAuth();
   const [reviews, setReviews] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [newReview, setNewReview] = useState({ rating: 5, review_text: '', product: '' });
   const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editValues, setEditValues] = useState({ rating: 5, review_text: '' });
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const { isAuthenticated, user } = useAuth();
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [prodRes] = await Promise.all([productsAPI.getProducts()]);
-        setProducts(prodRes.data.results || prodRes.data);
-        
-        if (productId) {
-          const res = await reviewsAPI.getReviews({ product_id: productId });
-          setReviews(res.data.results || res.data);
-          setNewReview((current) => ({ ...current, product: productId }));
-        } else {
-          const res = await reviewsAPI.getReviews();
-          setReviews(res.data.results || res.data);
-        }
-      } catch {
-        setError('Failed to load reviews');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadData();
-  }, [productId]);
-
-  const submitReview = async (e) => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-      window.location.href = '/login';
-      return;
-    }
-    setSaving(true); setError(''); setNotice('');
+  const loadReviews = useCallback(async () => {
+    if (!isAuthenticated || !user?.id) { setReviews([]); setLoading(false); return; }
+    setLoading(true); setError('');
     try {
-      const payload = {
-        product: parseInt(newReview.product),
-        rating: newReview.rating,
-        review_text: newReview.review_text,
-      };
-      if (editingId) await reviewsAPI.updateReview(editingId, payload);
-      else await reviewsAPI.createReview(payload);
-      setNewReview({ rating: 5, review_text: '', product: '' });
-      setNotice(editingId ? 'Your review has been updated.' : 'Thanks for sharing your review.'); setEditingId(null);
-      const res = await reviewsAPI.getReviews(productId ? { product_id: productId } : {});
-      setReviews(res.data.results || res.data);
-    } catch (err) { setError(err.response?.data?.detail || err.response?.data?.error || 'Could not save your review.'); }
-    finally { setSaving(false); }
+      const ownReviews = await getAllPages((params) => reviewsAPI.getReviews({ ...params, ...(productId ? { product_id: productId } : {}) }));
+      setReviews(ownReviews.filter((review) => Number(review.user?.id) === Number(user.id)));
+    } catch (err) { setError(responseError(err)); }
+    finally { setLoading(false); }
+  }, [isAuthenticated, user?.id, productId]);
+
+  useEffect(() => { loadReviews(); }, [loadReviews]);
+
+  const startEditing = (review) => {
+    setEditingId(review.id);
+    setEditValues({ rating: Number(review.rating), review_text: review.review_text || '' });
+    setError(''); setNotice('');
   };
 
-  const editReview = (review) => {
-    setEditingId(review.id); setNewReview({ rating: review.rating, review_text: review.review_text, product: String(review.product) });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const saveReview = async (event, review) => {
+    event.preventDefault(); setSavingId(review.id); setError(''); setNotice('');
+    try {
+      const { data } = await reviewsAPI.updateReview(review.id, editValues);
+      setReviews((items) => items.map((item) => item.id === review.id ? { ...item, ...data, product_detail: item.product_detail } : item));
+      setEditingId(null); setNotice('Your review was updated.');
+    } catch (err) { setError(responseError(err)); }
+    finally { setSavingId(null); }
   };
 
   const deleteReview = async (review) => {
-    if (!window.confirm('Delete your review?')) return;
-    setError(''); setNotice('');
-    try { await reviewsAPI.deleteReview(review.id); setReviews((items) => items.filter((item) => item.id !== review.id)); setNotice('Your review has been removed.'); }
-    catch (err) { setError(err.response?.data?.detail || 'Could not delete this review.'); }
+    if (!window.confirm(`Delete your review for ${review.product_detail?.product_name || 'this product'}?`)) return;
+    setDeletingId(review.id); setError(''); setNotice('');
+    try {
+      await reviewsAPI.deleteReview(review.id);
+      setReviews((items) => items.filter((item) => item.id !== review.id));
+      if (editingId === review.id) setEditingId(null);
+      setNotice('Your review was deleted.');
+    } catch (err) { setError(responseError(err)); }
+    finally { setDeletingId(null); }
   };
 
-  if (loading) return <div>Loading reviews...</div>;
+  if (authLoading) return <Loading />;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (loading) return <Loading />;
 
-  return (
-    <div className="page reviews-page">
-      <h1>Product Reviews</h1>
-      {isAuthenticated ? (
-        <form onSubmit={submitReview} className="review-form">
-          <h3>{editingId ? 'Edit your review' : 'Share your experience'}</h3>
-          {error && <div className="error" role="alert">{error}</div>}
-          <div className="form-group">
-            <label>Select Product</label>
-            <select
-              value={newReview.product}
-              onChange={(e) => setNewReview({ ...newReview, product: e.target.value })}
-              required
-            >
-              <option value="">Choose a product</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>{p.product_name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Rating (1-5)</label>
-            <select value={newReview.rating} onChange={(e) => setNewReview({...newReview, rating: parseInt(e.target.value)})}>
-              {[1,2,3,4,5].map(r => <option key={r} value={r}>{r} stars</option>)}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Your Review</label>
-            <textarea value={newReview.review_text} onChange={(e) => setNewReview({...newReview, review_text: e.target.value})} required />
-          </div>
-          <div className="admin-form-actions"><button type="submit" disabled={saving}>{saving ? 'Saving…' : editingId ? 'Save changes' : 'Submit review'}</button>{editingId && <button className="admin-quiet-button" type="button" onClick={() => { setEditingId(null); setNewReview({ rating: 5, review_text: '', product: productId || '' }); }}>Cancel</button>}</div>
-        </form>
-      ) : (
-        <div style={{ textAlign: 'center', padding: '2rem', background: 'white', borderRadius: '8px' }}>
-          <p>Please log in to write reviews</p>
-          <a href="/login" style={{ color: '#2563eb', fontWeight: '600' }}>Sign in here</a>
+  return <main className="page reviews-page my-reviews-page">
+    <p className="eyebrow">YOUR ACCOUNT</p>
+    <h1>My product reviews</h1>
+    <p className="my-reviews-intro">See the products you reviewed, and update or remove your review any time.</p>
+    {error && <div className="error" role="alert">{error}</div>}
+    {notice && <div className="success" role="status">{notice}</div>}
+    {!reviews.length ? <section className="my-reviews-empty"><span aria-hidden="true">☆</span><h2>No reviews yet</h2><p>After a delivered purchase, open that product page to share your experience.</p><Link className="btn-submit" to="/orders">View your orders</Link></section> : <Paginated items={reviews} pageSize={8} label="your reviews">{(pageReviews) => <div className="my-review-list">{pageReviews.map((review) => {
+      const product = review.product_detail;
+      const image = product?.images?.[0]?.image;
+      const isEditing = editingId === review.id;
+      return <article className="my-review-card" key={review.id}>
+        <div className="my-review-product">{image ? <Link to={product?.slug ? `/product/${product.slug}` : '/products'} className="my-review-product-image"><img src={image} alt={product?.product_name || 'Reviewed product'} loading="lazy" /></Link> : <div className="my-review-product-image my-review-image-placeholder" aria-hidden="true">UT</div>}
+          <div><p className="eyebrow">REVIEWED PRODUCT</p><h2><Link to={product?.slug ? `/product/${product.slug}` : '/products'}>{product?.product_name || 'Product'}</Link></h2><small>{product?.brand?.brand_name || product?.category?.category_name || 'UrbanThread'}</small></div>
         </div>
-      )}
-      {error && !isAuthenticated && <div className="error">{error}</div>}{notice && <div className="success" role="status">{notice}</div>}
-      <div className="review-list">
-        <h2>Customer Reviews</h2>
-        <Paginated items={reviews} pageSize={8} label="reviews">{(pageReviews) => pageReviews.map((r) => (
-          <div key={r.id} className="review-card">
-            <p><strong>{r.user?.username}</strong><span className="review-stars" aria-label={`${r.rating} out of 5 stars`}>{'★'.repeat(Number(r.rating))}{'☆'.repeat(5 - Number(r.rating))}</span></p>
-            <p>{r.review_text}</p>
-            <small style={{ color: '#64748b' }}>{new Date(r.created_at).toLocaleDateString()}</small>
-            {(user?.is_staff || user?.is_superuser || r.user?.id === user?.id) && <div className="admin-row-actions"><button type="button" onClick={() => editReview(r)}>Edit</button><button type="button" className="danger" onClick={() => deleteReview(r)}>Delete</button></div>}
-          </div>
-        ))}</Paginated>
-      </div>
-    </div>
-  );
+        {isEditing ? <form className="my-review-edit-form" onSubmit={(event) => saveReview(event, review)}>
+          <label>Rating<select value={editValues.rating} onChange={(event) => setEditValues({ ...editValues, rating: Number(event.target.value) })}>{[5, 4, 3, 2, 1].map((rating) => <option key={rating} value={rating}>{rating} {rating === 1 ? 'star' : 'stars'}</option>)}</select></label>
+          <label>Your review<textarea value={editValues.review_text} onChange={(event) => setEditValues({ ...editValues, review_text: event.target.value })} maxLength={3000} required /></label>
+          <div className="admin-form-actions"><button type="submit" disabled={savingId === review.id}>{savingId === review.id ? 'Saving…' : 'Save changes'}</button><button type="button" className="admin-quiet-button" onClick={() => setEditingId(null)}>Cancel</button></div>
+        </form> : <div className="my-review-copy"><p className="review-stars" aria-label={`${review.rating} out of 5 stars`}>{'★'.repeat(Number(review.rating))}{'☆'.repeat(5 - Number(review.rating))}</p><p>{review.review_text}</p><small>Posted {review.created_at ? new Date(review.created_at).toLocaleDateString() : 'recently'}{review.verified_purchase ? ' · Verified purchase' : ''}</small>
+          <div className="admin-row-actions"><button type="button" onClick={() => startEditing(review)}>Edit review</button><button type="button" className="danger" disabled={deletingId === review.id} onClick={() => deleteReview(review)}>{deletingId === review.id ? 'Deleting…' : 'Delete'}</button></div>
+        </div>}
+      </article>;
+    })}</div>}</Paginated>}
+  </main>;
 };

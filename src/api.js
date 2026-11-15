@@ -25,7 +25,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    const isAuthEndpoint = /\/accounts\/(login|register|logout|token\/refresh)\//.test(originalRequest?.url || '');
+    const isAuthEndpoint = /\/accounts\/(login|register|logout|token\/refresh|google|email\/verification\/(resend|confirm)|password\/reset\/(request|confirm))\//.test(originalRequest?.url || '');
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refresh_token');
@@ -54,6 +54,9 @@ api.interceptors.response.use(
 export const authAPI = {
   register: (data) => api.post('/accounts/register/', data),
   login: (data) => api.post('/accounts/login/', data),
+  resendEmailVerification: (email) => api.post('/accounts/email/verification/resend/', { email }),
+  verifyEmail: (data) => api.post('/accounts/email/verification/confirm/', data),
+  googleSignIn: (credential) => api.post('/accounts/google/', { credential }),
   requestPasswordReset: (data) => api.post('/accounts/password/reset/request/', data),
   confirmPasswordReset: (data) => api.post('/accounts/password/reset/confirm/', data),
   changePassword: (data) => api.post('/accounts/password/change/', data),

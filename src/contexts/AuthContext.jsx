@@ -39,25 +39,34 @@ export const AuthProvider = ({ children }) => {
     };
   }, []);
 
-  const login = useCallback(async (email, password) => {
-    const response = await authAPI.login({ email, password });
-    const { tokens, ...userData } = response.data;
+  const acceptSession = useCallback((data) => {
+    const { tokens, ...userData } = data;
     localStorage.setItem('access_token', tokens.access);
     localStorage.setItem('refresh_token', tokens.refresh);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-    return response.data;
+    return data;
   }, []);
+
+  const login = useCallback(async (email, password) => {
+    const response = await authAPI.login({ email, password });
+    return acceptSession(response.data);
+  }, [acceptSession]);
 
   const register = useCallback(async (data) => {
     const response = await authAPI.register(data);
-    const { tokens, ...userData } = response.data;
-    localStorage.setItem('access_token', tokens.access);
-    localStorage.setItem('refresh_token', tokens.refresh);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
     return response.data;
   }, []);
+
+  const verifyEmail = useCallback(async (email, otp) => {
+    const response = await authAPI.verifyEmail({ email, otp });
+    return acceptSession(response.data);
+  }, [acceptSession]);
+
+  const googleSignIn = useCallback(async (credential) => {
+    const response = await authAPI.googleSignIn(credential);
+    return acceptSession(response.data);
+  }, [acceptSession]);
 
   const logout = useCallback(async () => {
     const refreshToken = localStorage.getItem('refresh_token');
@@ -84,6 +93,8 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    verifyEmail,
+    googleSignIn,
     logout,
     updateProfile,
     isAuthenticated: !!user,
