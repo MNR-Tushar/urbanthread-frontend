@@ -148,6 +148,8 @@ h2 { font-size: clamp(1.45rem, 2.5vw, 2rem); }
 .chat-message { max-width: 86%; margin: 0; padding: 10px 13px; border-radius: 14px; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .9rem; line-height: 1.45; }
 .chat-message.assistant { align-self: flex-start; border: 1px solid var(--line); border-bottom-left-radius: 4px; background: white; }
 .chat-message.user { align-self: flex-end; border-bottom-right-radius: 4px; background: var(--green); color: white; }
+.chat-message a { color: var(--green); font-weight: 700; text-underline-offset: 2px; }
+.chat-message.user a { color: white; }
 .chat-typing { color: var(--muted); font-style: italic; }
 .chat-form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line); background: white; }
 .chat-form input { min-width: 0; flex: 1; padding: 10px 12px; border: 1px solid var(--line); border-radius: 999px; outline: 0; }
