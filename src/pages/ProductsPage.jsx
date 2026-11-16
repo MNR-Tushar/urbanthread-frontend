@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { productsAPI } from '../api';
-import { Loading } from '../components/common';
 import { useAuth } from '../contexts/useAuth';
 import { ResponsiveImage } from '../components/ResponsiveImage';
 
@@ -106,8 +105,6 @@ export const ProductsPage = () => {
   const featuredImage = featured?.images?.[0]?.image;
   const activeBanner = banners.length ? banners[bannerIndex % banners.length] : null;
 
-  if (loading) return <Loading />;
-
   return (
     <main className={`storefront ${isHome ? 'storefront-home' : 'storefront-catalog'}`}>
       {isHome && <section className="home-hero">
@@ -147,7 +144,7 @@ export const ProductsPage = () => {
         </div>
 
         <div className="product-grid">
-          {filteredProducts.length === 0 ? <div className="catalog-empty"><span>⌕</span><h3>No pieces found</h3><p>Try a different search or clear your filters.</p><button className="text-button" onClick={() => { setSearchParams({}); setSelectedCategory(''); setSelectedBrand(''); setPage(1); }}>Clear filters</button></div> : filteredProducts.map((product, index) => {
+          {loading && filteredProducts.length === 0 ? Array.from({ length: 4 }, (_, index) => <article className="skeleton-card" key={`loading-${index}`} aria-hidden="true"><i /><span /><span /><b /></article>) : filteredProducts.length === 0 ? <div className="catalog-empty"><span>⌕</span><h3>No pieces found</h3><p>Try a different search or clear your filters.</p><button className="text-button" onClick={() => { setSearchParams({}); setSelectedCategory(''); setSelectedBrand(''); setPage(1); }}>Clear filters</button></div> : filteredProducts.map((product, index) => {
             const image = product.images?.[0]?.image;
             const discounted = priceOf(product) < Number(product.price);
             return <article key={product.id} className="product-card">
