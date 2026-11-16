@@ -99,7 +99,7 @@ export const InventoryPage = () => {
   };
 
   const editProduct = (product) => {
-    setTab('catalog'); setEditingProduct(product.id);
+    setTab('catalog'); setEditingProduct(product.slug);
     const localDate = (value) => { if (!value) return ''; const date = new Date(value); return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
     setProductForm({ product_name: product.product_name || '', sku: product.sku || '', description: product.description || '', price: product.price || '', discount_price: Number(product.discount_price) > 0 ? product.discount_price : '', compare_at_price: product.compare_at_price || '', sale_starts_at: localDate(product.sale_starts_at), sale_ends_at: localDate(product.sale_ends_at), is_featured: Boolean(product.is_featured), category_id: product.category?.id || '', brand_id: product.brand?.id || '', is_available: product.is_available !== false });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -107,7 +107,7 @@ export const InventoryPage = () => {
 
   const deleteProduct = (product) => {
     if (!window.confirm(`Delete â€œ${product.product_name}â€ and its related stock?`)) return;
-    runAction(() => productsAPI.deleteProduct(product.id), 'Product deleted.');
+    runAction(() => productsAPI.deleteProduct(product.slug), 'Product deleted.');
   };
 
   const saveStock = async (event) => {

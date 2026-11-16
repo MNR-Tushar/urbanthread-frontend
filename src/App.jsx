@@ -19,7 +19,7 @@ import { OrderTrackingPage } from './pages/OrderTrackingPage';
 import { WishlistPage } from './pages/WishlistPage';
 import { AdminCustomerProfilePage } from './pages/AdminCustomerProfilePage';
 import { ReturnsPage } from './pages/ReturnsPage';
-import { ChangePasswordForm, PasswordResetPage } from './pages/PasswordSecurityPage';
+import { PasswordResetPage } from './pages/PasswordSecurityPage';
 import { ChatWidget } from './components/ChatWidget';
 
 function AppWithAuth() {
