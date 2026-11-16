@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { getAllPages, productsAPI } from '../api';
+import { productsAPI } from '../api';
 import { Loading } from '../components/common';
 import { useAuth } from '../contexts/useAuth';
-import { Paginated } from '../components/Paginated';
 import { ResponsiveImage } from '../components/ResponsiveImage';
 
 const asList = (data) => Array.isArray(data) ? data : data?.results || [];
@@ -17,6 +16,8 @@ export const ProductsPage = () => {
   const { isAuthenticated } = useAuth();
   const isHome = location.pathname === '/';
   const [products, setProducts] = useState([]);
+  const [productCount, setProductCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [banners, setBanners] = useState([]);
@@ -32,19 +33,38 @@ export const ProductsPage = () => {
 
   useEffect(() => {
     let active = true;
-    Promise.all([getAllPages(productsAPI.getProducts), getAllPages(productsAPI.getCategories), getAllPages(productsAPI.getBrands), productsAPI.getBanners(), productsAPI.getProductSections()])
-      .then(([productRows, categoryRows, brandRows, bannerResponse, sectionResponse]) => {
+    Promise.all([productsAPI.getCategories({ limit: 100 }), productsAPI.getBrands({ limit: 100 }), productsAPI.getBanners(), productsAPI.getProductSections()])
+      .then(([categoryResponse, brandResponse, bannerResponse, sectionResponse]) => {
         if (!active) return;
-        setProducts(productRows);
-        setCategories(categoryRows);
-        setBrands(brandRows);
+        setCategories(asList(categoryResponse.data));
+        setBrands(asList(brandResponse.data));
         setBanners(asList(bannerResponse.data));
         setHomeSections(sectionResponse.data);
       })
-      .catch(() => { if (active) setError('We could not load the collection. Please refresh and try again.'); })
-      .finally(() => { if (active) setLoading(false); });
+      .catch(() => { if (active) setError('We could not load the collection. Please refresh and try again.'); });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    const ordering = { featured: '-is_featured,-created_at', 'price-low': 'price', 'price-high': '-price', name: 'product_name' }[sortBy];
+    productsAPI.getProducts({
+      limit: 12,
+      offset: (page - 1) * 12,
+      ...(selectedCategory ? { category: selectedCategory } : {}),
+      ...(selectedBrand ? { brand: selectedBrand } : {}),
+      ...(searchQuery.trim() ? { search: searchQuery.trim() } : {}),
+      ordering,
+    }).then(({ data }) => {
+      if (!active) return;
+      setProducts(asList(data));
+      setProductCount(data.count ?? asList(data).length);
+    }).catch(() => {
+      if (active) setError('We could not load the collection. Please refresh and try again.');
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [page, selectedCategory, selectedBrand, searchQuery, sortBy]);
 
   useEffect(() => {
     if (banners.length < 2) return undefined;
@@ -52,7 +72,10 @@ export const ProductsPage = () => {
     return () => window.clearInterval(timer);
   }, [banners.length]);
 
-  useEffect(() => setSearchQuery(searchParams.get('search') || ''), [searchParams]);
+  useEffect(() => {
+    setSearchQuery(searchParams.get('search') || '');
+    setPage(1);
+  }, [searchParams]);
 
   useEffect(() => {
     if (!isAuthenticated) { setWishlistItems({}); return undefined; }
@@ -77,19 +100,7 @@ export const ProductsPage = () => {
     } catch { setError('Could not update your wishlist. Please try again.'); }
   };
 
-  const filteredProducts = useMemo(() => {
-    const query = searchQuery.trim().toLocaleLowerCase();
-    const list = products.filter((product) => {
-      const searchable = [product.product_name, product.description, product.brand?.brand_name, product.category?.category_name].filter(Boolean).join(' ').toLocaleLowerCase();
-      return (!selectedCategory || String(product.category?.id) === selectedCategory)
-        && (!selectedBrand || String(product.brand?.id) === selectedBrand)
-        && (!query || searchable.includes(query));
-    });
-    if (sortBy === 'price-low') return list.sort((a, b) => priceOf(a) - priceOf(b));
-    if (sortBy === 'price-high') return list.sort((a, b) => priceOf(b) - priceOf(a));
-    if (sortBy === 'name') return list.sort((a, b) => a.product_name.localeCompare(b.product_name));
-    return list;
-  }, [products, searchQuery, selectedCategory, selectedBrand, sortBy]);
+  const filteredProducts = products;
 
   const featured = filteredProducts[0] || products[0];
   const featuredImage = featured?.images?.[0]?.image;
@@ -122,21 +133,21 @@ export const ProductsPage = () => {
       <section className="collection-section" id="collection">
         <div className="collection-heading">
           <div><p className="section-kicker">CURATED FOR YOU</p><h2>{isHome ? 'Find your fit.' : 'The collection.'}</h2><p className="collection-subtitle">Pieces you will reach for, season after season.</p></div>
-          <span className="collection-count">{filteredProducts.length} {filteredProducts.length === 1 ? 'piece' : 'pieces'}</span>
+          <span className="collection-count">{productCount} {productCount === 1 ? 'piece' : 'pieces'}</span>
         </div>
 
         {error && <div className="error" role="alert">{error}</div>}
         <div className="catalog-toolbar">
           <p>{searchQuery ? <>Results for <strong>“{searchQuery}”</strong></> : 'Good clothes. No guesswork.'}</p>
           <div className="catalog-controls">
-            <label className="catalog-select-label">Category <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}><option value="">All categories</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.category_name}</option>)}</select></label>
-            <label className="catalog-select-label">Brand <select value={selectedBrand} onChange={(event) => setSelectedBrand(event.target.value)}><option value="">All brands</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.brand_name}</option>)}</select></label>
-            <label className="catalog-select-label">Sort <select value={sortBy} onChange={(event) => setSortBy(event.target.value)}><option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="name">Name: A–Z</option></select></label>
+            <label className="catalog-select-label">Category <select value={selectedCategory} onChange={(event) => { setSelectedCategory(event.target.value); setPage(1); }}><option value="">All categories</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.category_name}</option>)}</select></label>
+            <label className="catalog-select-label">Brand <select value={selectedBrand} onChange={(event) => { setSelectedBrand(event.target.value); setPage(1); }}><option value="">All brands</option>{brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.brand_name}</option>)}</select></label>
+            <label className="catalog-select-label">Sort <select value={sortBy} onChange={(event) => { setSortBy(event.target.value); setPage(1); }}><option value="featured">Featured</option><option value="price-low">Price: low to high</option><option value="price-high">Price: high to low</option><option value="name">Name: A–Z</option></select></label>
           </div>
         </div>
 
-        <Paginated items={filteredProducts} pageSize={12} label="products">{(pageProducts) => <div className="product-grid">
-          {filteredProducts.length === 0 ? <div className="catalog-empty"><span>⌕</span><h3>No pieces found</h3><p>Try a different search or clear your filters.</p><button className="text-button" onClick={() => { setSearchParams({}); setSelectedCategory(''); setSelectedBrand(''); }}>Clear filters</button></div> : pageProducts.map((product, index) => {
+        <div className="product-grid">
+          {filteredProducts.length === 0 ? <div className="catalog-empty"><span>⌕</span><h3>No pieces found</h3><p>Try a different search or clear your filters.</p><button className="text-button" onClick={() => { setSearchParams({}); setSelectedCategory(''); setSelectedBrand(''); setPage(1); }}>Clear filters</button></div> : filteredProducts.map((product, index) => {
             const image = product.images?.[0]?.image;
             const discounted = priceOf(product) < Number(product.price);
             return <article key={product.id} className="product-card">
@@ -153,7 +164,15 @@ export const ProductsPage = () => {
               </div>
             </article>;
           })}
-        </div>}</Paginated>
+        </div>
+        {productCount > 12 && <nav className="pagination" aria-label="Product pages">
+          <span className="pagination-summary">{(page - 1) * 12 + 1}–{Math.min(page * 12, productCount)} of {productCount}</span>
+          <div className="pagination-pages">
+            <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page === 1} aria-label="Previous page">‹</button>
+            <span className="pagination-number"><button type="button" className="active" aria-current="page">{page}</button></span>
+            <button type="button" onClick={() => setPage((current) => Math.min(Math.ceil(productCount / 12), current + 1))} disabled={page >= Math.ceil(productCount / 12)} aria-label="Next page">›</button>
+          </div>
+        </nav>}
       </section>
 
       {isHome && <div className="home-product-sections">{[['featured', 'Featured picks'], ['new_arrivals', 'New arrivals'], ['best_sellers', 'Best sellers']].map(([key, title]) => homeSections[key]?.length > 0 && <section className="collection-section home-product-section" key={key}><div className="collection-heading"><div><p className="section-kicker">URBANTHREAD EDIT</p><h2>{title}</h2></div></div><div className="product-grid">{homeSections[key].slice(0, 4).map((product) => <article className="product-card" key={product.id}><Link className="product-image-link" to={`/product/${product.slug}`}>{product.images?.[0]?.image ? <ResponsiveImage image={product.images[0]} alt={product.product_name} className="product-img" /> : <div className="product-img product-image-placeholder">UrbanThread</div>}</Link><div className="product-card-content"><span>{product.category?.category_name}</span><Link className="product-title-link" to={`/product/${product.slug}`}><h3>{product.product_name}</h3></Link><strong>{taka(priceOf(product))}</strong></div></article>)}</div></section>)}</div>}
