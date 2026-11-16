@@ -20,6 +20,7 @@ import { WishlistPage } from './pages/WishlistPage';
 import { AdminCustomerProfilePage } from './pages/AdminCustomerProfilePage';
 import { ReturnsPage } from './pages/ReturnsPage';
 import { ChangePasswordForm, PasswordResetPage } from './pages/PasswordSecurityPage';
+import { ChatWidget } from './components/ChatWidget';
 
 function AppWithAuth() {
   const { isAuthenticated, loading } = useAuth();
@@ -53,6 +54,7 @@ function AppWithAuth() {
         <Route path="/admin/customers/:customerUsername" element={<AdminRoute><AdminCustomerProfilePage /></AdminRoute>} />
       </Routes>
       <StoreFooter />
+      <ChatWidget />
     </Router>
   );
 }
