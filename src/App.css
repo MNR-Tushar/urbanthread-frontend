@@ -75,6 +75,9 @@ h2 { font-size: clamp(1.45rem, 2.5vw, 2rem); }
 .product-info > p, .product-meta { color: var(--muted); }
 .product-info > p { margin-bottom: 16px; }
 .product-info .product-price { margin: 20px 0; color: var(--green); }
+.sale-schedule { display: grid; gap: 4px; margin: -10px 0 18px; color: var(--muted); font-size: .88rem; }
+.sale-schedule p { margin: 0; }
+.sale-schedule time { color: #40543d; font-weight: 700; }
 .product-info label { color: #41483f; }
 .product-info input[type=number] { border: 1px solid var(--line); border-radius: 9px; }
 .eyebrow { margin-bottom: 8px; color: var(--green); font-size: .8rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }

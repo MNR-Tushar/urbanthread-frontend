@@ -6,6 +6,10 @@ import { Loading } from '../components/common';
 import { Paginated } from '../components/Paginated';
 import { ResponsiveImage } from '../components/ResponsiveImage';
 
+const formatSaleDateTime = (value) => new Intl.DateTimeFormat('en-BD', {
+  dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Dhaka',
+}).format(new Date(value));
+
 export const ProductDetailPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
@@ -150,6 +154,11 @@ export const ProductDetailPage = () => {
   const approvedReviews = reviews.filter((review) => review.is_approved);
   const displayedPendingReview = pendingReview || reviews.find((review) => !review.is_approved);
   const productImages = (product.images || []).slice(0, 5);
+  const salePrice = Number(product.discount_price || 0);
+  const hasSalePrice = salePrice > 0 && salePrice < Number(product.price);
+  const now = Date.now();
+  const saleStartsAt = product.sale_starts_at && new Date(product.sale_starts_at).getTime() > now ? product.sale_starts_at : null;
+  const saleEndsAt = product.sale_ends_at && new Date(product.sale_ends_at).getTime() > now ? product.sale_ends_at : null;
   const showPreviousImage = () => setImageIndex((current) => (current - 1 + productImages.length) % productImages.length);
   const showNextImage = () => setImageIndex((current) => (current + 1) % productImages.length);
 
@@ -189,6 +198,10 @@ export const ProductDetailPage = () => {
         <div className="product-price">৳{product.current_price ?? (product.discount_price > 0 ? product.discount_price : product.price)}
           {Number(product.current_price ?? product.price) < Number(product.compare_at_price || product.price) && <span className="discount">৳{product.compare_at_price || product.price}</span>}
         </div>
+        {hasSalePrice && (saleStartsAt || saleEndsAt) && <div className="sale-schedule" aria-label="Sale schedule">
+          {saleStartsAt && <p>Sale starts: <time dateTime={saleStartsAt}>{formatSaleDateTime(saleStartsAt)}</time></p>}
+          {saleEndsAt && <p>Sale ends: <time dateTime={saleEndsAt}>{formatSaleDateTime(saleEndsAt)}</time></p>}
+        </div>}
         <div className="variant-group">
           <label htmlFor="color-choice">Color</label>
           <select id="color-choice" value={selectedColor} onChange={(event) => { setSelectedColor(event.target.value); setSelectedSize(''); }}>
