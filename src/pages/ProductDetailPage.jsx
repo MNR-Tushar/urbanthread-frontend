@@ -16,6 +16,7 @@ export const ProductDetailPage = () => {
   const { isAuthenticated } = useAuth();
   const [product, setProduct] = useState(null);
   const [imageIndex, setImageIndex] = useState(0);
+  const [isZoomed, setIsZoomed] = useState(false);
   const [variants, setVariants] = useState([]);
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
@@ -41,7 +42,7 @@ export const ProductDetailPage = () => {
 
   useEffect(() => {
     let active = true;
-    setProduct(null); setImageIndex(0); setVariants([]); setSelectedColor(''); setSelectedSize(''); setLoading(true); setError('');
+    setProduct(null); setImageIndex(0); setIsZoomed(false); setVariants([]); setSelectedColor(''); setSelectedSize(''); setLoading(true); setError('');
     productsAPI.getProduct(slug)
       .then(async (productRes) => {
         if (!active) return;
@@ -165,9 +166,10 @@ export const ProductDetailPage = () => {
   return (
     <main className="page product-detail-page">
       <div className="product-gallery">
-        <div className="product-gallery-main">
+        <div className={`product-gallery-main${isZoomed ? ' is-zoomed' : ''}`}>
           {productImages.length ? <ResponsiveImage image={productImages[imageIndex]} alt={`${product.product_name} image ${imageIndex + 1}`} className="product-img" loading="eager" sizes="(max-width: 800px) 100vw, 55vw" />
             : <div className="product-img product-image-placeholder">No image available</div>}
+          {productImages.length > 0 && <button type="button" className="product-gallery-zoom" onClick={() => setIsZoomed((zoomed) => !zoomed)} aria-label={isZoomed ? 'Zoom out of product image' : 'Zoom in on product image'} aria-pressed={isZoomed}>{isZoomed ? '−' : '+'}</button>}
           {productImages.length > 1 && <>
             <button type="button" className="product-gallery-arrow previous" onClick={showPreviousImage} aria-label="Previous product image">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg>
