@@ -15,7 +15,7 @@ export const ProfilePage = () => {
   const [profileForm, setProfileForm] = useState({ phone: '', gender: '', date_of_birth: '' });
   const [profileImage, setProfileImage] = useState(null);
   const [profilePreview, setProfilePreview] = useState('');
-  const [form, setForm] = useState({ username: '', first_name: '', last_name: '', phone: '', address: '' });
+  const [form, setForm] = useState({ username: '', first_name: '', last_name: '', address: '' });
   const [newAddress, setNewAddress] = useState(emptyAddress);
   const [editingPersonal, setEditingPersonal] = useState(false);
   const [editingAccount, setEditingAccount] = useState(false);
@@ -36,7 +36,7 @@ export const ProfilePage = () => {
     Promise.all([authAPI.getUser(), authAPI.getAddresses(), authAPI.getProfiles(), ordersAPI.getOrders()])
       .then(([userRes, addressRes, profileRes, ordersRes]) => {
         setUser(userRes.data);
-        setForm({ username: userRes.data.username || '', first_name: userRes.data.first_name || '', last_name: userRes.data.last_name || '', phone: userRes.data.phone || '', address: userRes.data.address || '' });
+        setForm({ username: userRes.data.username || '', first_name: userRes.data.first_name || '', last_name: userRes.data.last_name || '', address: userRes.data.address || '' });
         setAddresses(listData(addressRes.data));
         setOrders(listData(ordersRes.data));
         const currentProfile = listData(profileRes.data).find((item) => Number(item.user) === Number(userRes.data.id)) || null;
@@ -134,10 +134,9 @@ export const ProfilePage = () => {
         {editingAccount ? <form onSubmit={saveProfile} className="profile-form">
           <div className="form-group"><label htmlFor="username">Username</label><input id="username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} required /></div>
           <div className="profile-name-fields"><div className="form-group"><label htmlFor="first-name">First name</label><input id="first-name" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} /></div><div className="form-group"><label htmlFor="last-name">Last name</label><input id="last-name" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} /></div></div>
-          <div className="form-group"><label htmlFor="phone">Phone</label><input id="phone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} /></div>
           <div className="form-group"><label htmlFor="account-address">Default address</label><textarea id="account-address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
-          <div className="profile-edit-actions"><button className="btn-submit" disabled={saving}>{saving ? 'Saving...' : 'Save account'}</button><button type="button" className="admin-quiet-button" onClick={() => { setEditingAccount(false); setForm({ username: user?.username || '', first_name: user?.first_name || '', last_name: user?.last_name || '', phone: user?.phone || '', address: user?.address || '' }); }}>Cancel</button></div>
-        </form> : <div className="profile-readonly"><p><strong>Email:</strong> {user?.email}</p><p><strong>Username:</strong> {user?.username}</p><p><strong>Name:</strong> {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Not added'}</p><p><strong>Phone:</strong> {user?.phone || 'Not added'}</p><p><strong>Account type:</strong> {user?.is_staff ? 'Administrator' : 'Customer'}</p></div>}
+          <div className="profile-edit-actions"><button className="btn-submit" disabled={saving}>{saving ? 'Saving...' : 'Save account'}</button><button type="button" className="admin-quiet-button" onClick={() => { setEditingAccount(false); setForm({ username: user?.username || '', first_name: user?.first_name || '', last_name: user?.last_name || '', address: user?.address || '' }); }}>Cancel</button></div>
+        </form> : <div className="profile-readonly"><p><strong>Email:</strong> {user?.email}</p><p><strong>Username:</strong> {user?.username}</p><p><strong>Name:</strong> {[user?.first_name, user?.last_name].filter(Boolean).join(' ') || 'Not added'}</p><p><strong>Account type:</strong> {user?.is_staff ? 'Administrator' : 'Customer'}</p></div>}
       </section>
       <ChangePasswordForm />
       <section className="addresses">
