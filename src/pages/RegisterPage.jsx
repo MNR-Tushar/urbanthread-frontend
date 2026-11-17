@@ -10,6 +10,7 @@ export const RegisterPage = () => {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [step, setStep] = useState('register');
   const [error, setError] = useState('');
@@ -19,7 +20,12 @@ export const RegisterPage = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
-    event.preventDefault(); setLoading(true); setError(''); setNotice('');
+    event.preventDefault(); setError(''); setNotice('');
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    setLoading(true);
     try {
       const result = await register({ username, email, password });
       setStep('verify'); setNotice(result.detail || 'Enter the code sent to your email.');
@@ -62,6 +68,7 @@ export const RegisterPage = () => {
         <div className="form-group"><label htmlFor="register-username">Username</label><input id="register-username" type="text" autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Choose a username" required /></div>
         <div className="form-group"><label htmlFor="register-email">Email Address</label><input id="register-email" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="you@example.com" required /></div>
         <div className="form-group"><label htmlFor="register-password">Password</label><input id="register-password" type="password" autoComplete="new-password" minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Create a password" required /></div>
+        <div className="form-group"><label htmlFor="register-confirm-password">Confirm Password</label><input id="register-confirm-password" type="password" autoComplete="new-password" minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Enter your password again" required /></div>
         <button type="submit" className="btn-submit" disabled={loading}>{loading ? 'Creating account…' : 'Create Account'}</button>
       </form>
       <div className="auth-divider"><span>or continue with</span></div>
